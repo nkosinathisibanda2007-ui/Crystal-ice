@@ -1,0 +1,6 @@
+{
+  "name": "Crystal Ice Zimbabwe",
+  "description": "Zimbabwe's premier ice manufacturer and blast freezing provider in Waterfalls, Harare. Supplying 2.5kg & 5kg ice cubes, 10kg ice blocks, and meat blast freezing for restaurants, butcheries, and events.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

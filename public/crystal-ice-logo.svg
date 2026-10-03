@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 100" fill="none">
+  <!-- 3D Isometric Crystal Cube Icon -->
+  <g transform="translate(10, 0)">
+    <!-- Top Diamond Face (Ice Light Blue) -->
+    <path d="M50 8 L87 29.5 L50 51 L13 29.5 Z" fill="#7099CB"/>
+    
+    <!-- Left Vertical Face (Deep Cobalt Blue) -->
+    <path d="M13 29.5 L50 51 L50 93 L13 71.5 Z" fill="#1F68B5"/>
+    
+    <!-- Right Vertical Face (Rich Cobalt Blue) -->
+    <path d="M87 29.5 L50 51 L50 93 L87 71.5 Z" fill="#1D6FB8"/>
+    
+    <!-- White Seam Lines -->
+    <path d="M50 51 L50 93" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M50 51 L13 29.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    <path d="M50 51 L87 29.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    <path d="M50 51 L50 8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    
+    <!-- Central 4-Pointed White Star Flare -->
+    <path d="M50 38 Q50 51 37 51 Q50 51 50 64 Q50 51 63 51 Q50 51 50 38 Z" fill="white"/>
+  </g>
+
+  <!-- Typography matching Screenshot_20261001-134737_1.jpg -->
+  <text x="120" y="47" font-family="'Outfit', 'Montserrat', 'Inter', sans-serif" font-weight="900" font-size="34" letter-spacing="1.5" fill="#1F68B5">CRYSTAL</text>
+  <text x="120" y="86" font-family="'Outfit', 'Montserrat', 'Inter', sans-serif" font-weight="900" font-size="34" letter-spacing="3.5" fill="#7099CB">ICE</text>
+</svg>
