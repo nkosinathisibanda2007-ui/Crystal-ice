@@ -314,6 +314,18 @@ export const api = {
     });
   },
 
+  async deleteAdminUser(userId: string): Promise<{ success: boolean; message: string }> {
+    return this.adminRequest(`/api/admin/users/${userId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async restartAdminBootstrap(): Promise<{ success: boolean; message: string }> {
+    return this.adminRequest('/api/admin/bootstrap/restart', {
+      method: 'POST'
+    });
+  },
+
   // Admin Orders
   async getAdminOrders(): Promise<Order[]> {
     return this.adminRequest('/api/admin/orders');

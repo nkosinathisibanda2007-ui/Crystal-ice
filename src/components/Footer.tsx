@@ -4,7 +4,6 @@ import {
   MapPin,
   Phone,
   Mail,
-  Lock,
   Clock,
   ExternalLink
 } from 'lucide-react';
@@ -17,15 +16,13 @@ interface FooterProps {
   setActiveTab: (tab: string) => void;
   onOpenOrderModal: () => void;
   onOpenQuoteModal: () => void;
-  onOpenAdmin: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
   settings,
   setActiveTab,
   onOpenOrderModal,
-  onOpenQuoteModal,
-  onOpenAdmin
+  onOpenQuoteModal
 }) => {
   const handleNav = (tab: string) => {
     setActiveTab(tab);
@@ -58,7 +55,7 @@ export const Footer: React.FC<FooterProps> = ({
               className="text-left focus:outline-none"
               aria-label="Crystal Ice Zimbabwe Home"
             >
-              <CrystalIceLogo size="md" lightMode={true} showSubtitle={true} />
+              <CrystalIceLogo size="md" lightMode={true} showSubtitle={true} customLogoUrl={settings.logo_url} />
             </button>
           </div>
 
@@ -160,20 +157,9 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
 
           <div className="flex items-center gap-6">
-            <span className="text-slate-300 font-medium">
+            <span className="text-slate-400 font-medium">
               Pure Ice. Built for Zimbabwe.
             </span>
-
-            {/* Business owner admin link */}
-            <button
-              id="footer-admin-login-link"
-              onClick={onOpenAdmin}
-              className="flex items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors ml-2"
-              title="Admin Portal"
-            >
-              <Lock className="w-3 h-3" />
-              <span>Admin</span>
-            </button>
           </div>
         </div>
       </div>

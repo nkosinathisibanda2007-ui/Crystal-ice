@@ -14,6 +14,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import { WebsiteSettings } from '../types/index.ts';
+import { SkeletonImage } from './SkeletonImage.tsx';
 
 interface StorefrontCenterpieceProps {
   settings: WebsiteSettings;
@@ -117,11 +118,12 @@ export const StorefrontCenterpiece: React.FC<StorefrontCenterpieceProps> = ({
               ease: "easeInOut"
             }}
           >
-            <img
+            <SkeletonImage
               src={settings.storefront_image || settings.hero_bg_image || "/crystal_ice_storefront.jpg"}
+              fallbackSrc="/crystal_ice_storefront.jpg"
               alt="Crystal Ice Zimbabwe Storefront & Plant Facility in Waterfalls, Harare"
+              containerClassName="w-full h-full"
               className="w-full h-full object-cover object-center"
-              referrerPolicy="no-referrer"
             />
           </motion.div>
 

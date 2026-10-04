@@ -26,7 +26,8 @@
     "google_business_url": "https://www.google.com/search?kgmid=%2Fg%2F11q40rdy9f&hl=en-ZW&q=Crystal%20Ice%20Zimbabwe&shem=epsd1%2Cltae%2Crimspwouoe&shndl=30&source=sh%2Fx%2Floc%2Fosrp%2Fm1%2F4&kgs=73ff328e81c3f7ff",
     "seo_keywords": "Crystal Ice Zimbabwe, ice supplier Harare, ice cubes Zimbabwe, 2.5kg ice bag, 5kg ice bag, 10kg ice block Harare, meat blast freezing Zimbabwe, chicken blast freezing Waterfalls Harare, restaurant ice delivery Harare",
     "hero_bg_image": "/crystal_ice_backdrop.jpg",
-    "logo_url": "/crystal_ice_logo.png"
+    "logo_url": "/crystal_ice_logo.png",
+    "bootstrap_complete": false
   },
   "statistics": [
     {
@@ -482,6 +483,28 @@
   ],
   "orders": [
     {
+      "customer_name": "Test Harare Client",
+      "customer_phone": "+263771234567",
+      "delivery_type": "pickup",
+      "preferred_date": "2026-10-04",
+      "preferred_time_slot": "ASAP (Next Available Slot)",
+      "items": [
+        {
+          "product_id": "prod-1",
+          "product_name": "2.5kg Packaged Ice Cubes",
+          "quantity": 10,
+          "unit_price": 1,
+          "subtotal": 10
+        }
+      ],
+      "total_estimated_amount": 10,
+      "id": "ord-1791107224766",
+      "reference_number": "CI-ORD-5331",
+      "status": "New",
+      "created_at": "2026-10-04T09:47:04.766Z",
+      "updated_at": "2026-10-04T09:47:04.766Z"
+    },
+    {
       "customer_name": "Tatenda Moyo",
       "customer_phone": "+263772000000",
       "delivery_type": "pickup",
@@ -569,6 +592,21 @@
   ],
   "quote_requests": [
     {
+      "customer_name": "Harare Grill",
+      "customer_phone": "+263772000111",
+      "customer_email": "chef@hararegrill.co.zw",
+      "service_type": "Daily Ice Supply",
+      "estimated_volume": "50 bags/day",
+      "delivery_frequency": "weekly",
+      "delivery_location": "Metro Area",
+      "notes": "",
+      "id": "qte-1791107229244",
+      "reference_number": "CI-QTE-2827",
+      "status": "New",
+      "created_at": "2026-10-04T09:47:09.244Z",
+      "updated_at": "2026-10-04T09:47:09.244Z"
+    },
+    {
       "customer_name": "Chipo Sibanda",
       "customer_phone": "+263773000000",
       "customer_email": "chipo@example.com",
@@ -603,6 +641,15 @@
     }
   ],
   "contact_submissions": [
+    {
+      "name": "Chipo Banda",
+      "phone": "+263773000222",
+      "inquiry_type": "General",
+      "message": "Inquiry about cold storage blast freezing space",
+      "id": "cnt-1791107229270",
+      "status": "New",
+      "created_at": "2026-10-04T09:47:09.270Z"
+    },
     {
       "id": "cnt-1",
       "name": "Farai Nyandoro",
@@ -698,6 +745,33 @@
   ],
   "notifications": [
     {
+      "id": "notif-1791107229271-890",
+      "title": "New Contact Inquiry",
+      "message": "Chipo Banda submitted an inquiry regarding General",
+      "type": "contact",
+      "reference_id": "cnt-1791107229270",
+      "read": false,
+      "created_at": "2026-10-04T09:47:09.271Z"
+    },
+    {
+      "id": "notif-1791107229245-93",
+      "title": "Commercial Quote Requested",
+      "message": "Quote CI-QTE-2827 submitted by Harare Grill (Individual) for Daily Ice Supply",
+      "type": "quote",
+      "reference_id": "CI-QTE-2827",
+      "read": false,
+      "created_at": "2026-10-04T09:47:09.245Z"
+    },
+    {
+      "id": "notif-1791107224766-554",
+      "title": "New Order Received",
+      "message": "Order CI-ORD-5331 placed by Test Harare Client (PICKUP) - $10.00",
+      "type": "order",
+      "reference_id": "CI-ORD-5331",
+      "read": false,
+      "created_at": "2026-10-04T09:47:04.766Z"
+    },
+    {
       "id": "notif-1788886866978-538",
       "title": "Commercial Quote Requested",
       "message": "Quote CI-QTE-2078 submitted by Chipo Sibanda (Individual) for Meat Blast Freezing Services",
@@ -735,6 +809,45 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "aud-1791107229271-139",
+      "user_name": "Guest Customer",
+      "user_role": "guest",
+      "action": "CONTACT_SUBMISSION",
+      "record_type": "contact",
+      "record_id": "cnt-1791107229270",
+      "details": "Contact form message received from Chipo Banda (+263773000222)",
+      "timestamp": "2026-10-04T09:47:09.271Z"
+    },
+    {
+      "id": "aud-1791107229245-744",
+      "user_name": "Guest Customer",
+      "user_role": "guest",
+      "action": "QUOTE_REQUESTED",
+      "record_type": "quote",
+      "record_id": "qte-1791107229244",
+      "details": "Quote request CI-QTE-2827 submitted by Harare Grill",
+      "timestamp": "2026-10-04T09:47:09.245Z"
+    },
+    {
+      "id": "aud-1791107224767-715",
+      "user_name": "Guest Customer",
+      "user_role": "guest",
+      "action": "ORDER_CREATED",
+      "record_type": "order",
+      "record_id": "ord-1791107224766",
+      "details": "Order CI-ORD-5331 placed by Test Harare Client for 1 items.",
+      "timestamp": "2026-10-04T09:47:04.767Z"
+    },
+    {
+      "id": "aud-1791105770712-246",
+      "user_name": "Operations Director (Crystal Ice)",
+      "user_role": "admin",
+      "action": "LOGIN_SUCCESS",
+      "record_type": "auth",
+      "details": "Staff logged in: admin@crystalice.co.zw (admin)",
+      "timestamp": "2026-10-04T09:22:50.712Z"
+    },
     {
       "id": "aud-1791041526697-756",
       "user_name": "Operations Director (Crystal Ice)",
@@ -978,69 +1091,9 @@
       "timestamp": "2026-09-08T17:00:34.154Z"
     }
   ],
-  "admin_users": [
-    {
-      "id": "usr-admin-1",
-      "email": "admin@crystalice.co.zw",
-      "name": "Operations Director (Crystal Ice)",
-      "role": "super_admin",
-      "passwordHash": "faf1b953bd257f95efda8697db236b978bef3f40efb4650ebb31d13adaa9cee6a271b4d0ac649b838375d001acbc919d87e968f09dd46bd79796c127a8e179f0",
-      "salt": "66573826934a0360b4cd58c6ae988cbb"
-    }
-  ],
-  "sessions": [
-    {
-      "token": "75c9d1ff8421aec4cd4c47b5a98321663960aa7818b84b89a3474875eac4ba95",
-      "userId": "usr-admin-1",
-      "createdAt": "2026-10-02T18:32:47.787Z",
-      "expiresAt": "2026-10-09T18:32:47.786Z"
-    },
-    {
-      "token": "4b7d508318a424133afaa7b5c85d516d85a021cbabdc877fdecf9cda9d2744ac",
-      "userId": "usr-admin-1",
-      "createdAt": "2026-10-02T18:33:40.554Z",
-      "expiresAt": "2026-10-09T18:33:40.554Z"
-    },
-    {
-      "token": "a12c07f8c3ff7bda090751ee64c083b6ae7f8d47b30862203940945b8e98d320",
-      "userId": "usr-admin-1",
-      "createdAt": "2026-10-02T18:34:58.369Z",
-      "expiresAt": "2026-10-09T18:34:58.369Z"
-    },
-    {
-      "token": "75db15b6b626efbb71c67ddf464766dfd74037e62bd14ff94282c114f0ec3bc1",
-      "userId": "usr-admin-1",
-      "createdAt": "2026-10-03T15:05:54.317Z",
-      "expiresAt": "2026-10-10T15:05:54.317Z"
-    },
-    {
-      "token": "cedfdd243c55b2c23007c4cfe21211171c6338d60d66d7571254f823e4c4d395",
-      "userId": "usr-admin-1",
-      "createdAt": "2026-10-03T15:30:44.555Z",
-      "expiresAt": "2026-10-10T15:30:44.555Z"
-    },
-    {
-      "token": "36688e5b2b3c7907dc063bda61928c2e39d5a3032120206082f5351b05f69f10",
-      "userId": "usr-admin-1",
-      "createdAt": "2026-10-03T15:30:51.292Z",
-      "expiresAt": "2026-10-10T15:30:51.292Z"
-    },
-    {
-      "token": "035633547d489256080402f60eac4da0348ccd0131bf4e2811de6500dff94ba9",
-      "userId": "usr-admin-1",
-      "createdAt": "2026-10-03T15:32:06.605Z",
-      "expiresAt": "2026-10-10T15:32:06.605Z"
-    }
-  ],
-  "user_roles": [
-    {
-      "id": "role-1",
-      "user_id": "usr-admin-1",
-      "role": "admin",
-      "assigned_at": "2026-09-30T19:17:29.764Z",
-      "assigned_by": "migration"
-    }
-  ],
+  "admin_users": [],
+  "sessions": [],
+  "user_roles": [],
   "process_steps": [
     {
       "id": "step-1",

@@ -45,6 +45,7 @@ export interface StoredAdminUser {
   passwordHash: string;
   salt: string;
   created_at: string;
+  last_login?: string;
 }
 
 export interface StoredUserRole {
@@ -362,8 +363,9 @@ export class DatabaseStore {
       assigned_by: 'first_admin_bootstrap'
     };
 
-    this.data.admin_users.push(newAdmin);
-    this.data.user_roles.push(newRole);
+    this.data.admin_users = [newAdmin];
+    this.data.user_roles = [newRole];
+    this.data.settings.bootstrap_complete = true;
 
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
@@ -394,6 +396,168 @@ export class DatabaseStore {
         active: true
       },
       token
+    };
+  }
+
+  // Restart Admin Bootstrap - allows master setup screen to be shown fresh
+  public restartAdminBootstrap(requesterName?: string): boolean {
+    this.data.admin_users = [];
+    this.data.user_roles = [];
+    this.data.sessions = [];
+    this.data.settings.bootstrap_complete = false;
+    this.addAuditLog(requesterName || 'Owner Action', 'system', 'BOOTSTRAP_RESTARTED', 'auth', 'Admin bootstrap restarted. System is now open for initial master admin setup.');
+    this.saveDatabase();
+    this.broadcastChange('admin_status');
+    return true;
+  }
+
+  // Admin Team Member Management
+  public getAllAdminUsers(requester?: AdminUser): AdminUser[] {
+    return (this.data.admin_users || []).map(u => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: this.getUserRole(u.id),
+      active: u.active !== false,
+      created_at: u.created_at,
+      last_login: u.last_login
+    }));
+  }
+
+  public createAdminUser(data: { name: string; email: string; password?: string; passwordPlain?: string; role: SystemRole }, requester?: AdminUser): AdminUser {
+    const email = (data.email || '').trim().toLowerCase();
+    const name = (data.name || '').trim();
+    const password = data.password || data.passwordPlain || '';
+    const role: SystemRole = data.role || 'staff';
+
+    if (!email || !email.includes('@')) {
+      throw new Error('A valid email address is required.');
+    }
+    if (!password || password.length < 6) {
+      throw new Error('Password must be at least 6 characters long.');
+    }
+    if (this.data.admin_users.some(u => u.email.toLowerCase() === email)) {
+      throw new Error(`An administrator with email "${email}" already exists.`);
+    }
+
+    const salt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = hashPassword(password, salt);
+    const userId = 'usr-admin-' + Date.now();
+
+    const newAdmin: StoredAdminUser = {
+      id: userId,
+      email,
+      name: name || email.split('@')[0],
+      active: true,
+      passwordHash,
+      salt,
+      created_at: new Date().toISOString()
+    };
+
+    const newRole: StoredUserRole = {
+      id: 'role-' + Date.now(),
+      user_id: userId,
+      role,
+      assigned_at: new Date().toISOString(),
+      assigned_by: requester?.name || 'Administrator'
+    };
+
+    this.data.admin_users.push(newAdmin);
+    this.data.user_roles.push(newRole);
+
+    this.addAuditLog(
+      requester?.name || 'Admin',
+      requester?.role || 'admin',
+      'ADMIN_USER_CREATED',
+      'admin_user',
+      `Created administrator "${newAdmin.name}" (${newAdmin.email}) with role "${role}".`,
+      userId
+    );
+
+    this.saveDatabase();
+    this.broadcastChange('admin_users');
+
+    return {
+      id: newAdmin.id,
+      email: newAdmin.email,
+      name: newAdmin.name,
+      role,
+      active: true,
+      created_at: newAdmin.created_at
+    };
+  }
+
+  public deleteAdminUser(userId: string, requester?: AdminUser): boolean {
+    if (this.data.admin_users.length <= 1) {
+      throw new Error('Cannot delete the sole administrator account in the system.');
+    }
+
+    const idx = this.data.admin_users.findIndex(u => u.id === userId);
+    if (idx === -1) {
+      throw new Error('Administrator account not found.');
+    }
+
+    const deletedUser = this.data.admin_users[idx];
+    this.data.admin_users.splice(idx, 1);
+    this.data.user_roles = this.data.user_roles.filter(r => r.user_id !== userId);
+    this.data.sessions = this.data.sessions.filter(s => s.userId !== userId);
+
+    this.addAuditLog(
+      requester?.name || 'Admin',
+      requester?.role || 'admin',
+      'ADMIN_USER_DELETED',
+      'admin_user',
+      `Deleted administrator "${deletedUser.name}" (${deletedUser.email}).`,
+      userId
+    );
+
+    this.saveDatabase();
+    this.broadcastChange('admin_users');
+    return true;
+  }
+
+  public updateAdminUserStatus(userId: string, active: boolean, role?: SystemRole, requester?: AdminUser): AdminUser {
+    const user = this.data.admin_users.find(u => u.id === userId);
+    if (!user) {
+      throw new Error('Administrator account not found.');
+    }
+
+    user.active = active;
+
+    if (role) {
+      const existingRole = this.data.user_roles.find(r => r.user_id === userId);
+      if (existingRole) {
+        existingRole.role = role;
+      } else {
+        this.data.user_roles.push({
+          id: 'role-' + Date.now(),
+          user_id: userId,
+          role,
+          assigned_at: new Date().toISOString(),
+          assigned_by: requester?.name || 'Admin'
+        });
+      }
+    }
+
+    this.addAuditLog(
+      requester?.name || 'Admin',
+      requester?.role || 'admin',
+      'ADMIN_USER_UPDATED',
+      'admin_user',
+      `Updated administrator "${user.name}" status: ${active ? 'active' : 'inactive'}${role ? `, role: ${role}` : ''}.`,
+      userId
+    );
+
+    this.saveDatabase();
+    this.broadcastChange('admin_users');
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: this.getUserRole(user.id),
+      active: user.active !== false,
+      created_at: user.created_at
     };
   }
 
@@ -485,61 +649,6 @@ export class DatabaseStore {
       active: u.active !== false,
       created_at: u.created_at
     }));
-  }
-
-  public createAdminUser(payload: { email: string; name: string; password: string; role: SystemRole }, requestingUser: AdminUser): AdminUser {
-    if (!this.hasPermission(requestingUser.id, 'manage_users')) {
-      throw new Error('Permission denied: manage_users required.');
-    }
-
-    const email = payload.email.trim().toLowerCase();
-    if (this.data.admin_users.some(u => u.email.toLowerCase() === email)) {
-      throw new Error('A user with this email address already exists.');
-    }
-
-    const salt = crypto.randomBytes(16).toString('hex');
-    const passwordHash = hashPassword(payload.password, salt);
-    const userId = 'usr-' + Date.now();
-
-    const newUser: StoredAdminUser = {
-      id: userId,
-      email,
-      name: payload.name.trim(),
-      active: true,
-      passwordHash,
-      salt,
-      created_at: new Date().toISOString()
-    };
-
-    const newRole: StoredUserRole = {
-      id: 'role-' + Date.now(),
-      user_id: userId,
-      role: payload.role || 'staff',
-      assigned_at: new Date().toISOString(),
-      assigned_by: requestingUser.id
-    };
-
-    this.data.admin_users.push(newUser);
-    this.data.user_roles.push(newRole);
-    this.saveDatabase();
-
-    this.addAuditLog(
-      requestingUser.name,
-      requestingUser.role,
-      'USER_CREATED',
-      'user',
-      `Created user ${newUser.email} with role ${newRole.role}`,
-      newUser.id
-    );
-
-    return {
-      id: newUser.id,
-      email: newUser.email,
-      name: newUser.name,
-      role: newRole.role,
-      active: true,
-      created_at: newUser.created_at
-    };
   }
 
   public updateUserRole(targetUserId: string, newRole: SystemRole, requestingUser: AdminUser): AdminUser {
@@ -1255,16 +1364,28 @@ export class DatabaseStore {
     // 1. Hero Backdrop Centerpiece
     slots.push({
       id: 'hero_backdrop',
-      title: 'Homepage Hero Backdrop Centerpiece',
+      title: 'Homepage Hero Backdrop Photo',
       category: 'hero',
       currentUrl: this.data.settings.hero_bg_image || '/crystal_ice_backdrop.jpg',
-      description: 'The prominent hero backdrop showcasing the Crystal Ice Zimbabwe plant and branding.',
+      description: 'The prominent hero backdrop showcasing the Crystal Ice Zimbabwe packaged ice operations.',
       recommendedAspect: '16:9',
       targetType: 'settings',
       targetField: 'hero_bg_image'
     });
 
-    // 2. Storefront Main Facility
+    // 2. Homepage About Section Card
+    slots.push({
+      id: 'homepage_about_card',
+      title: 'Homepage About Card Photo ("Clean. Safe. Reliable.")',
+      category: 'about',
+      currentUrl: this.data.settings.homepage_about_image || '/src/assets/images/ice_cubes_promo_1790856824108.jpg',
+      description: 'Image displayed inside the homepage "Clean. Safe. Reliable." About card.',
+      recommendedAspect: '4:3',
+      targetType: 'settings',
+      targetField: 'homepage_about_image'
+    });
+
+    // 3. Storefront Main Facility
     slots.push({
       id: 'storefront_main',
       title: 'Waterfalls Storefront & Plant Facility',
@@ -1276,17 +1397,121 @@ export class DatabaseStore {
       targetField: 'storefront_image'
     });
 
-    // 3. About Facility Image
+    // 4. About Facility Image
     slots.push({
       id: 'about_facility',
       title: 'About Us Facility & Plant Operations',
       category: 'about',
       currentUrl: this.data.settings.about_facility_image || '/crystal_ice_storefront.jpg',
       description: 'Operational facility photo displayed on the About Us page.',
-      recommendedAspect: '4:3',
+      recommendedAspect: '16:9',
       targetType: 'settings',
       targetField: 'about_facility_image'
     });
+
+    // 5. Official Logo
+    slots.push({
+      id: 'site_logo',
+      title: 'Official Crystal Ice Logo',
+      category: 'branding',
+      currentUrl: this.data.settings.logo_url || '/crystal_ice_logo.png',
+      description: 'Company logo displayed across header, footer, and admin portals.',
+      recommendedAspect: 'Horizontal (2.3:1)',
+      targetType: 'settings',
+      targetField: 'logo_url'
+    });
+
+    // 6. Delivery Fleet
+    slots.push({
+      id: 'delivery_fleet',
+      title: 'Cold-Chain Delivery Fleet & Logistics',
+      category: 'facilities',
+      currentUrl: this.data.settings.delivery_fleet_image || '/src/assets/images/service_harare_skyline_1790773229249.jpg',
+      description: 'Refrigerated delivery trucks and Harare distribution fleet.',
+      recommendedAspect: '16:9',
+      targetType: 'settings',
+      targetField: 'delivery_fleet_image'
+    });
+
+    // 7. Cold Storage Chamber
+    slots.push({
+      id: 'cold_storage_chamber',
+      title: 'Cold Storage Room & Blast Freezing Chamber',
+      category: 'facilities',
+      currentUrl: this.data.settings.cold_storage_image || '/src/assets/images/cold_room_storage_1790856812685.jpg',
+      description: 'Sub-zero blast freezing room with industrial cooling fans.',
+      recommendedAspect: '16:9',
+      targetType: 'settings',
+      targetField: 'cold_storage_image'
+    });
+
+    // 8. Solid Ice Blocks Freezing
+    slots.push({
+      id: 'ice_blocks_freezing',
+      title: 'Solid Ice Blocks Freezing Production Room',
+      category: 'facilities',
+      currentUrl: this.data.settings.ice_blocks_image || '/src/assets/images/ice_blocks_freezing_1790856836725.jpg',
+      description: 'Vertical hanging ice column freezing tanks and block storage.',
+      recommendedAspect: '16:9',
+      targetType: 'settings',
+      targetField: 'ice_blocks_image'
+    });
+
+    // 9. Water Purification
+    if (!slots.some(s => s.id === 'water_purification')) {
+      slots.push({
+        id: 'water_purification',
+        title: 'Water Purification & RO Filtration Plant',
+        category: 'facilities',
+        currentUrl: this.data.settings.water_purification_image || '',
+        description: 'Food-grade multi-stage reverse osmosis filtration facility.',
+        recommendedAspect: '16:9',
+        targetType: 'settings',
+        targetField: 'water_purification_image'
+      });
+    }
+
+    // 10. Harare Dispatch Desk & Cold Bay
+    if (!slots.some(s => s.id === 'contact_dispatch_facility')) {
+      slots.push({
+        id: 'contact_dispatch_facility',
+        title: 'Harare 24/7 Dispatch Desk & Loading Bay',
+        category: 'facilities',
+        currentUrl: this.data.settings.contact_dispatch_image || '',
+        description: 'Waterfalls physical customer service desk and loading bay.',
+        recommendedAspect: '16:9',
+        targetType: 'settings',
+        targetField: 'contact_dispatch_image'
+      });
+    }
+
+    // 11. Quality Assurance Lab & Testing Station
+    if (!slots.some(s => s.id === 'quality_assurance_lab')) {
+      slots.push({
+        id: 'quality_assurance_lab',
+        title: 'Food-Grade Testing & Purity Verification Lab',
+        category: 'facilities',
+        currentUrl: this.data.settings.quality_assurance_image || '',
+        description: 'Microbial and TDS water purity testing station.',
+        recommendedAspect: '16:9',
+        targetType: 'settings',
+        targetField: 'quality_assurance_image'
+      });
+    }
+
+    // 12. Uninterrupted Power Backup
+    if (!slots.some(s => s.id === 'emergency_backup_power')) {
+      slots.push({
+        id: 'emergency_backup_power',
+        title: 'Heavy Diesel Generator (Continuous Freezing Power)',
+        category: 'facilities',
+        currentUrl: this.data.settings.generator_image || '',
+        description: 'Commercial standby generator guaranteeing 24/7 ice manufacturing.',
+        recommendedAspect: '16:9',
+        targetType: 'settings',
+        targetField: 'generator_image'
+      });
+    }
 
     // 4. Products
     this.data.products.forEach((prod) => {
@@ -1358,10 +1583,28 @@ export class DatabaseStore {
 
     if (slotId === 'hero_backdrop') {
       this.data.settings.hero_bg_image = newUrl;
+    } else if (slotId === 'homepage_about_card') {
+      this.data.settings.homepage_about_image = newUrl;
     } else if (slotId === 'storefront_main') {
       this.data.settings.storefront_image = newUrl;
     } else if (slotId === 'about_facility') {
       this.data.settings.about_facility_image = newUrl;
+    } else if (slotId === 'site_logo') {
+      this.data.settings.logo_url = newUrl;
+    } else if (slotId === 'delivery_fleet') {
+      this.data.settings.delivery_fleet_image = newUrl;
+    } else if (slotId === 'cold_storage_chamber') {
+      this.data.settings.cold_storage_image = newUrl;
+    } else if (slotId === 'ice_blocks_freezing') {
+      this.data.settings.ice_blocks_image = newUrl;
+    } else if (slotId === 'water_purification') {
+      this.data.settings.water_purification_image = newUrl;
+    } else if (slotId === 'contact_dispatch_facility') {
+      this.data.settings.contact_dispatch_image = newUrl;
+    } else if (slotId === 'quality_assurance_lab') {
+      this.data.settings.quality_assurance_image = newUrl;
+    } else if (slotId === 'emergency_backup_power') {
+      this.data.settings.generator_image = newUrl;
     } else if (slotId.startsWith('product-')) {
       const prodId = slotId.replace('product-', '');
       const prod = this.data.products.find(p => p.id === prodId);
@@ -1407,10 +1650,28 @@ export class DatabaseStore {
 
     if (slotId === 'hero_backdrop') {
       this.data.settings.hero_bg_image = '';
+    } else if (slotId === 'homepage_about_card') {
+      this.data.settings.homepage_about_image = '';
     } else if (slotId === 'storefront_main') {
       this.data.settings.storefront_image = '';
     } else if (slotId === 'about_facility') {
       this.data.settings.about_facility_image = '';
+    } else if (slotId === 'site_logo') {
+      this.data.settings.logo_url = '';
+    } else if (slotId === 'delivery_fleet') {
+      this.data.settings.delivery_fleet_image = '';
+    } else if (slotId === 'cold_storage_chamber') {
+      this.data.settings.cold_storage_image = '';
+    } else if (slotId === 'ice_blocks_freezing') {
+      this.data.settings.ice_blocks_image = '';
+    } else if (slotId === 'water_purification') {
+      this.data.settings.water_purification_image = '';
+    } else if (slotId === 'contact_dispatch_facility') {
+      this.data.settings.contact_dispatch_image = '';
+    } else if (slotId === 'quality_assurance_lab') {
+      this.data.settings.quality_assurance_image = '';
+    } else if (slotId === 'emergency_backup_power') {
+      this.data.settings.generator_image = '';
     } else if (slotId.startsWith('product-')) {
       const prodId = slotId.replace('product-', '');
       const prod = this.data.products.find(p => p.id === prodId);

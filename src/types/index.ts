@@ -220,6 +220,17 @@ export interface WebsiteSettings {
   storefront_image?: string;
   logo_url?: string;
   about_facility_image?: string;
+  homepage_about_image?: string;
+  delivery_fleet_image?: string;
+  cold_storage_image?: string;
+  ice_blocks_image?: string;
+  water_purification_image?: string;
+  ice_cubes_card_image?: string;
+  meat_blast_card_image?: string;
+  contact_dispatch_image?: string;
+  quality_assurance_image?: string;
+  generator_image?: string;
+  bootstrap_complete?: boolean;
   custom_images?: Record<string, string>;
   about_story?: string;
   about_mission?: string;

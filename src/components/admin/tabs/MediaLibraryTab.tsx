@@ -28,6 +28,7 @@ export const MediaLibraryTab: React.FC<MediaLibraryTabProps> = ({ onOpenLiveSlot
   const [isUploading, setIsUploading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchMedia = async () => {
@@ -76,11 +77,11 @@ export const MediaLibraryTab: React.FC<MediaLibraryTabProps> = ({ onOpenLiveSlot
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Delete media item "${name}"?`)) return;
     try {
       await api.deleteMedia(id);
       setMedia((prev) => prev.filter((m) => m.id !== id));
       setSuccess(`Removed "${name}" from media library.`);
+      setConfirmDeleteId(null);
     } catch (err: any) {
       setError(err.message || 'Failed to delete media asset');
     }
@@ -283,13 +284,30 @@ export const MediaLibraryTab: React.FC<MediaLibraryTabProps> = ({ onOpenLiveSlot
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
 
-                    <button
-                      onClick={() => handleDelete(item.id, item.name)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
-                      title="Delete asset"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {confirmDeleteId === item.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleDelete(item.id, item.name)}
+                          className="px-2 py-0.5 bg-rose-600 text-white font-bold text-[10px] rounded hover:bg-rose-700"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-1.5 py-0.5 bg-slate-200 text-slate-700 text-[10px] rounded hover:bg-slate-300"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(item.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                        title="Delete asset"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

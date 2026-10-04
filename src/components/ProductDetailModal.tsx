@@ -12,6 +12,7 @@ import {
   ThermometerSnowflake
 } from 'lucide-react';
 import { Product } from '../types/index.ts';
+import { SkeletonImage } from './SkeletonImage.tsx';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -83,9 +84,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             {product.image && (
               <div className="p-2 sm:p-3 bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden">
                 <div className="h-56 sm:h-64 w-full overflow-hidden rounded-xl bg-slate-100 relative">
-                  <img
+                  <SkeletonImage
                     src={product.image}
                     alt={product.name}
+                    containerClassName="w-full h-full"
                     className="w-full h-full object-cover object-center"
                   />
                 </div>

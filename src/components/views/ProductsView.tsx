@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Product, WebsiteSettings } from '../../types/index.ts';
 import { BlastFreezingCalculator } from '../BlastFreezingCalculator.tsx';
+import { SkeletonImage } from '../SkeletonImage.tsx';
 
 // Exact user photos respected in numerical order
 // Photo 2: 2.5kg ice cubes (cold room storage facility)
@@ -206,13 +207,14 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
               >
                 <div>
                   <div className="aspect-[16/10] w-full overflow-hidden bg-slate-100 relative">
-                    <img
+                    <SkeletonImage
                       src={cardImg}
                       alt={product.name}
+                      containerClassName="w-full h-full"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     {product.price && (
-                      <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs text-[#0265B5] text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                      <div className="absolute top-3 right-3 z-20 bg-white/95 backdrop-blur-xs text-[#0265B5] text-xs font-bold px-3 py-1 rounded-full shadow-sm">
                         ${product.price.toFixed(2)}
                       </div>
                     )}

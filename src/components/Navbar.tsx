@@ -3,7 +3,6 @@ import {
   MessageCircle,
   Menu,
   X,
-  Lock,
   Phone
 } from 'lucide-react';
 import { WebsiteSettings } from '../types/index.ts';
@@ -16,8 +15,6 @@ interface NavbarProps {
   orderItemsCount: number;
   onOpenOrderModal: () => void;
   onOpenQuoteModal: () => void;
-  onOpenAdmin: () => void;
-  isAdminLoggedIn: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -26,9 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   orderItemsCount,
   onOpenOrderModal,
-  onOpenQuoteModal,
-  onOpenAdmin,
-  isAdminLoggedIn
+  onOpenQuoteModal
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -75,7 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center text-left group focus:outline-none"
             aria-label="Crystal Ice Zimbabwe Homepage"
           >
-            <CrystalIceLogo size="md" showSubtitle={true} />
+            <CrystalIceLogo size="md" showSubtitle={true} customLogoUrl={settings.logo_url} />
           </button>
 
           {/* Desktop Navigation Links matching Reference UI styling */}
@@ -117,28 +112,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               )}
             </button>
-
-            {/* Subtle Admin management link */}
-            <button
-              id="admin-portal-link-header"
-              onClick={onOpenAdmin}
-              className="p-2 text-slate-400 hover:text-slate-700 transition-colors rounded-full hover:bg-slate-100"
-              title="Admin Portal"
-              aria-label="Admin Portal"
-            >
-              <Lock className="w-3.5 h-3.5" />
-            </button>
           </div>
 
           {/* Mobile Hamburger Menu Toggle */}
           <div className="flex items-center gap-2 md:hidden">
             <button
-              id="mobile-order-button-icon"
+              id="mobile-order-button"
               onClick={onOpenOrderModal}
-              className="p-2 rounded-full bg-[#0265B5] text-white"
-              aria-label="Order Ice"
+              className="px-3.5 py-1.5 rounded-full bg-[#0265B5] text-white text-xs font-bold shadow-xs active:scale-95 transition-transform"
             >
-              <MessageCircle className="w-4 h-4 fill-current" />
+              Order Ice
             </button>
 
             <button
@@ -200,16 +183,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <Phone className="w-3.5 h-3.5 text-[#0265B5]" />
                   <span>{settings.phone_primary}</span>
                 </a>
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenAdmin();
-                  }}
-                  className="flex items-center gap-1 text-slate-400 hover:text-slate-700"
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Admin</span>
-                </button>
               </div>
             </div>
           </div>

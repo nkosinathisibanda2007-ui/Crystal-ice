@@ -63,6 +63,84 @@ const upload = multer({
   }
 });
 
+// Security Headers Middleware
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// ----------------------------------------------------
+// IN-MEMORY RATE LIMITING SYSTEM
+// ----------------------------------------------------
+interface RateLimitRecord {
+  count: number;
+  resetTime: number;
+}
+
+function createRateLimiter(options: { windowMs: number; max: number; message: string }) {
+  const store = new Map<string, RateLimitRecord>();
+
+  // Cleanup expired entries periodically
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, record] of store.entries()) {
+      if (now > record.resetTime) {
+        store.delete(ip);
+      }
+    }
+  }, options.windowMs);
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+    const now = Date.now();
+    const record = store.get(clientIp);
+
+    if (!record || now > record.resetTime) {
+      store.set(clientIp, { count: 1, resetTime: now + options.windowMs });
+      return next();
+    }
+
+    if (record.count >= options.max) {
+      const retryAfterSec = Math.ceil((record.resetTime - now) / 1000);
+      res.setHeader('Retry-After', retryAfterSec);
+      return res.status(429).json({
+        error: options.message,
+        retryAfter: retryAfterSec
+      });
+    }
+
+    record.count++;
+    next();
+  };
+}
+
+// 1. Strict Auth Limiter: Max 10 attempts per 15 minutes for admin login / bootstrap
+const authRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many authentication attempts. Please wait 15 minutes before trying again.'
+});
+
+// 2. Public Submissions Limiter: Max 30 orders/quotes/contacts per 15 minutes
+const submissionRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: 'Too many requests submitted. Please wait a few moments before trying again.'
+});
+
+// 3. General API Limiter: Max 240 requests per minute
+const apiRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 240,
+  message: 'API rate limit exceeded. Please slow down.'
+});
+
+// Apply General Rate Limiter to all /api routes
+app.use('/api', apiRateLimiter);
+
 // Request logging middleware
 app.use((req, res, next) => {
   if (req.path.startsWith('/api')) {
@@ -220,7 +298,7 @@ app.get('/api/public/news', (req: Request, res: Response) => {
 });
 
 // Public Guest Order Submission
-app.post('/api/public/orders', (req: Request, res: Response) => {
+app.post('/api/public/orders', submissionRateLimiter, (req: Request, res: Response) => {
   try {
     const {
       customer_name,
@@ -286,7 +364,7 @@ app.post('/api/public/orders', (req: Request, res: Response) => {
 });
 
 // Public Commercial Quote Request
-app.post('/api/public/quotes', (req: Request, res: Response) => {
+app.post('/api/public/quotes', submissionRateLimiter, (req: Request, res: Response) => {
   try {
     const {
       customer_name,
@@ -335,7 +413,7 @@ app.post('/api/public/quotes', (req: Request, res: Response) => {
 });
 
 // Public Contact Form Submission
-app.post('/api/public/contact', (req: Request, res: Response) => {
+app.post('/api/public/contact', submissionRateLimiter, (req: Request, res: Response) => {
   try {
     const { name, phone, email, inquiry_type, message } = req.body;
     if (!name || !phone || !message) {
@@ -372,7 +450,7 @@ app.get('/api/admin/bootstrap/status', (req: Request, res: Response) => {
   });
 });
 
-app.post('/api/admin/bootstrap', (req: Request, res: Response) => {
+app.post('/api/admin/bootstrap', authRateLimiter, (req: Request, res: Response) => {
   try {
     const { email, name, password } = req.body;
     const result = dbStore.bootstrapFirstAdmin(email, name, password);
@@ -391,7 +469,7 @@ app.post('/api/admin/bootstrap', (req: Request, res: Response) => {
 // ----------------------------------------------------
 // ADMIN AUTHENTICATION
 // ----------------------------------------------------
-app.post('/api/admin/login', (req: Request, res: Response) => {
+app.post('/api/admin/login', authRateLimiter, (req: Request, res: Response) => {
   const emailInput = req.body.email || req.body.username;
   const password = req.body.password;
   if (!emailInput || !password) {
@@ -473,6 +551,24 @@ app.patch('/api/admin/users/:id/toggle-active', requireAdminAuth, requirePermiss
   try {
     const ok = dbStore.toggleUserActive(req.params.id, req.adminUser!);
     res.json({ success: ok });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admin/users/:id', requireAdminAuth, requirePermission('manage_users'), (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const ok = dbStore.deleteAdminUser(req.params.id, req.adminUser!);
+    res.json({ success: ok, message: 'Administrator account deleted successfully.' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/bootstrap/restart', requireAdminAuth, requirePermission('manage_users'), (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const ok = dbStore.restartAdminBootstrap(req.adminUser?.name || 'Authorized Administrator');
+    res.json({ success: ok, message: 'Admin bootstrap restarted. System is now open for initial setup.' });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

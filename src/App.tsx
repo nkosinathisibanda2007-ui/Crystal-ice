@@ -50,21 +50,73 @@ const defaultSettings: WebsiteSettings = {
   hero_subheadline: "Supplying high-purity 2.5kg & 5kg ice cubes, 10kg slow-melt solid ice blocks, and industrial-grade meat blast freezing to local restaurants, bars, butcheries, and events.",
   hero_badge: "Supplying Harare's Top Restaurants & Butcheries",
   hero_cta_primary: "Order Ice ($0.75 / 2.5kg)",
-  hero_cta_secondary: "Meat Blast Freezing Rates"
+  hero_cta_secondary: "Meat Blast Freezing Rates",
+  hero_bg_image: "/crystal_ice_backdrop.jpg",
+  logo_url: "/crystal_ice_logo.png"
 };
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // Check if we have cached homepage data to render immediately without waiting
+  const hasCachedHome = !!localStorage.getItem('crystal_ice_settings');
+  const [isLoading, setIsLoading] = useState<boolean>(!hasCachedHome);
 
-  // Core Datasets
-  const [settings, setSettings] = useState<WebsiteSettings>(defaultSettings);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [faqs, setFaqs] = useState<FAQ[]>([]);
-  const [deliveryAreas, setDeliveryAreas] = useState<DeliveryArea[]>([]);
-  const [statistics, setStatistics] = useState<Statistic[]>([]);
+  // Core Datasets with local cache to guarantee instant home page caching and permanent image persistence
+  const [settings, setSettings] = useState<WebsiteSettings>(() => {
+    try {
+      const cached = localStorage.getItem('crystal_ice_settings');
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return defaultSettings;
+  });
+
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const cached = localStorage.getItem('crystal_ice_products');
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return [];
+  });
+
+  const [services, setServices] = useState<Service[]>(() => {
+    try {
+      const cached = localStorage.getItem('crystal_ice_services');
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return [];
+  });
+
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(() => {
+    try {
+      const cached = localStorage.getItem('crystal_ice_testimonials');
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return [];
+  });
+
+  const [faqs, setFaqs] = useState<FAQ[]>(() => {
+    try {
+      const cached = localStorage.getItem('crystal_ice_faqs');
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return [];
+  });
+
+  const [deliveryAreas, setDeliveryAreas] = useState<DeliveryArea[]>(() => {
+    try {
+      const cached = localStorage.getItem('crystal_ice_delivery_areas');
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return [];
+  });
+
+  const [statistics, setStatistics] = useState<Statistic[]>(() => {
+    try {
+      const cached = localStorage.getItem('crystal_ice_statistics');
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return [];
+  });
 
   // Modals state
   const [isOrderModalOpen, setIsOrderModalOpen] = useState<boolean>(false);
@@ -109,13 +161,34 @@ export default function App() {
         api.getStatistics().catch(() => [])
       ]);
 
-      if (settingsRes) setSettings({ ...settingsRes });
-      if (productsRes && productsRes.length > 0) setProducts([...productsRes]);
-      if (servicesRes && servicesRes.length > 0) setServices([...servicesRes]);
-      if (testimonialsRes && testimonialsRes.length > 0) setTestimonials([...testimonialsRes]);
-      if (faqsRes && faqsRes.length > 0) setFaqs(faqsRes);
-      if (deliveryAreasRes && deliveryAreasRes.length > 0) setDeliveryAreas(deliveryAreasRes);
-      if (statisticsRes && statisticsRes.length > 0) setStatistics(statisticsRes);
+      if (settingsRes) {
+        setSettings({ ...settingsRes });
+        try { localStorage.setItem('crystal_ice_settings', JSON.stringify(settingsRes)); } catch {}
+      }
+      if (productsRes && productsRes.length > 0) {
+        setProducts([...productsRes]);
+        try { localStorage.setItem('crystal_ice_products', JSON.stringify(productsRes)); } catch {}
+      }
+      if (servicesRes && servicesRes.length > 0) {
+        setServices([...servicesRes]);
+        try { localStorage.setItem('crystal_ice_services', JSON.stringify(servicesRes)); } catch {}
+      }
+      if (testimonialsRes && testimonialsRes.length > 0) {
+        setTestimonials([...testimonialsRes]);
+        try { localStorage.setItem('crystal_ice_testimonials', JSON.stringify(testimonialsRes)); } catch {}
+      }
+      if (faqsRes && faqsRes.length > 0) {
+        setFaqs(faqsRes);
+        try { localStorage.setItem('crystal_ice_faqs', JSON.stringify(faqsRes)); } catch {}
+      }
+      if (deliveryAreasRes && deliveryAreasRes.length > 0) {
+        setDeliveryAreas(deliveryAreasRes);
+        try { localStorage.setItem('crystal_ice_delivery_areas', JSON.stringify(deliveryAreasRes)); } catch {}
+      }
+      if (statisticsRes && statisticsRes.length > 0) {
+        setStatistics(statisticsRes);
+        try { localStorage.setItem('crystal_ice_statistics', JSON.stringify(statisticsRes)); } catch {}
+      }
     } catch (err) {
       console.error('Error fetching Crystal Ice data:', err);
     } finally {
@@ -139,13 +212,29 @@ export default function App() {
         setIsAdminOpen(true);
       }
     };
+
+    // Secret shortcut: Ctrl+Shift+A or Alt+Shift+A opens Admin Portal
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.altKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setIsAdminOpen(prev => !prev);
+      }
+    };
+
+    // Initial check on load
+    if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
+      setIsAdminOpen(true);
+    }
+
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('hashchange', handlePopState);
+    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
       unsubscribeEvents();
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('hashchange', handlePopState);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -197,8 +286,6 @@ export default function App() {
         orderItemsCount={0}
         onOpenOrderModal={() => handleOpenOrderModal()}
         onOpenQuoteModal={() => handleOpenQuoteModal()}
-        onOpenAdmin={() => setIsAdminOpen(true)}
-        isAdminLoggedIn={isAdminLoggedIn}
       />
 
       {/* Main Dynamic View Content */}
@@ -283,20 +370,19 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenOrderModal={() => handleOpenOrderModal()}
         onOpenQuoteModal={() => handleOpenQuoteModal()}
-        onOpenAdmin={() => setIsAdminOpen(true)}
       />
 
       {/* Floating Speed Actions (Bottom Right) */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2.5">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-2.5">
         <a
           id="floating-whatsapp-action"
           href={whatsappFloatingUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-13 h-13 p-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl shadow-xl shadow-emerald-500/25 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group"
+          className="w-12 h-12 sm:w-13 sm:h-13 p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl shadow-xl shadow-emerald-500/25 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 group"
           title="Instant WhatsApp Dispatch Chat"
         >
-          <MessageCircle className="w-6 h-6" />
+          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6" />
         </a>
 
         <button
@@ -341,8 +427,8 @@ export default function App() {
         <AdminDashboard
           onClose={() => {
             setIsAdminOpen(false);
-            if (window.location.hash === '#admin') {
-              history.replaceState(null, '', window.location.pathname);
+            if (window.location.hash === '#admin' || window.location.pathname === '/admin') {
+              history.replaceState(null, '', '/');
             }
             setIsAdminLoggedIn(!!localStorage.getItem('arcticpure_admin_token'));
           }}

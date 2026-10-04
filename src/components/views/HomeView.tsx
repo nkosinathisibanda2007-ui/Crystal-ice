@@ -20,6 +20,7 @@ import {
 import { Product, Service, Testimonial, FAQ, WebsiteSettings, Statistic, DeliveryArea } from '../../types/index.ts';
 import { BlastFreezingCalculator } from '../BlastFreezingCalculator.tsx';
 import { AuthenticShowcase } from '../plant/AuthenticShowcase.tsx';
+import { SkeletonImage } from '../SkeletonImage.tsx';
 
 // Exact User Uploaded Photos
 // Photo 3: Ice Cubes 2.5kg & 5kg ("On the Rocks with us" promo flyer)
@@ -76,9 +77,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <section className="relative min-h-[85vh] lg:min-h-[90vh] flex flex-col justify-between pt-28 sm:pt-32 pb-8 overflow-hidden">
         {/* Full-Bleed Atmospheric Background Photo (Fully Visible with Subtle Left Editorial Shade) */}
         <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none">
-          <img
+          <SkeletonImage
             src={settings.hero_bg_image || "/crystal_ice_backdrop.jpg"}
+            fallbackSrc="/crystal_ice_backdrop.jpg"
             alt="Crystal Ice Zimbabwe Packaged Ice & Plant Facility"
+            dark={true}
+            containerClassName="w-full h-full"
             className="w-full h-full object-cover object-center scale-100"
           />
           {/* Subtle Editorial Shade: Left side has gentle contrast for typography; right side stays bright and crystal clear */}
@@ -183,12 +187,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group hover:-translate-y-1">
               <div>
                 <div className="aspect-[16/10] w-full overflow-hidden bg-slate-50 relative">
-                  <img
+                  <SkeletonImage
                     src={iceCubesProduct?.image || productIceCubesImg}
+                    fallbackSrc={productIceCubesImg}
                     alt="Crystal clear food-grade Ice Cubes"
+                    containerClassName="w-full h-full"
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs text-[#0265B5] text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
+                  <div className="absolute top-3 right-3 z-20 bg-white/95 backdrop-blur-xs text-[#0265B5] text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
                     $1.00 / bag ($0.75 for 100+ packs)
                   </div>
                 </div>
@@ -219,12 +225,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group hover:-translate-y-1">
               <div>
                 <div className="aspect-[16/10] w-full overflow-hidden bg-slate-50 relative">
-                  <img
+                  <SkeletonImage
                     src={iceBlocksProduct?.image || productIceBlocksImg}
+                    fallbackSrc={productIceBlocksImg}
                     alt="High-density solid Ice Blocks"
+                    containerClassName="w-full h-full"
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs text-[#0265B5] text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
+                  <div className="absolute top-3 right-3 z-20 bg-white/95 backdrop-blur-xs text-[#0265B5] text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
                     $2.00 / 10kg
                   </div>
                 </div>
@@ -255,12 +263,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group hover:-translate-y-1">
               <div>
                 <div className="aspect-[16/10] w-full overflow-hidden bg-slate-50 relative">
-                  <img
+                  <SkeletonImage
                     src={products.find(p => p.category.includes('Blast') || p.name.includes('Blast'))?.image || productMeatBlastImg}
+                    fallbackSrc={productMeatBlastImg}
                     alt="Commercial Meat Blast Freezing Chamber"
+                    containerClassName="w-full h-full"
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs text-[#0265B5] text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
+                  <div className="absolute top-3 right-3 z-20 bg-white/95 backdrop-blur-xs text-[#0265B5] text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
                     15T Facility
                   </div>
                 </div>
@@ -298,11 +308,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             {/* Left Main Card: Split Image + Dark Navy Panel */}
             <div className="lg:col-span-8 rounded-3xl overflow-hidden shadow-xl bg-white grid grid-cols-1 md:grid-cols-12">
-              {/* Left Image half */}
-              <div className="md:col-span-5 relative min-h-[260px] md:min-h-full">
-                <img
-                  src={settings.about_facility_image || settings.storefront_image || productIceCubesImg}
-                  alt="Crystal Ice pure ice crystals"
+              {/* Left Image half with mobile-optimized aspect ratio */}
+              <div className="md:col-span-5 relative aspect-[16/10] sm:aspect-[4/3] md:aspect-auto min-h-[240px] md:min-h-full overflow-hidden bg-slate-100">
+                <SkeletonImage
+                  src={settings.homepage_about_image || settings.about_facility_image || productIceCubesImg}
+                  fallbackSrc={productIceCubesImg}
+                  alt="Crystal Ice Zimbabwe pure ice crystals"
+                  containerClassName="w-full h-full min-h-[240px] md:min-h-full"
                   className="w-full h-full object-cover object-center"
                 />
               </div>
@@ -460,10 +472,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl sm:rounded-3xl overflow-hidden relative shadow-xl">
             {/* Background Harare Skyline Image */}
-            <img
+            <SkeletonImage
               src={serviceHarareSkylineImg}
               alt="Harare Zimbabwe Skyline Service Area"
-              className="absolute inset-0 w-full h-full object-cover object-center"
+              dark={true}
+              containerClassName="absolute inset-0 w-full h-full"
+              className="w-full h-full object-cover object-center"
             />
 
             {/* Blue Tint Gradient Overlay for contrast and readability */}

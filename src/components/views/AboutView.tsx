@@ -20,6 +20,7 @@ import productIceCubesImg from '../../assets/images/product_ice_cubes_1790773170
 import productColdRoomImg from '../../assets/images/product_cold_room_1790773216083.jpg';
 import { PlantColdStorage } from '../plant/PlantColdStorage.tsx';
 import { PlantBlockFreezing } from '../plant/PlantBlockFreezing.tsx';
+import { SkeletonImage } from '../SkeletonImage.tsx';
 
 interface AboutViewProps {
   settings: WebsiteSettings;
@@ -89,9 +90,11 @@ export const AboutView: React.FC<AboutViewProps> = ({
 
           {/* Actual Photograph of the Physical Crystal Ice Storefront & Facility */}
           <div className="lg:col-span-5 relative min-h-[300px] lg:min-h-full bg-slate-100 group overflow-hidden">
-            <img
+            <SkeletonImage
               src={settings.about_facility_image || settings.storefront_image || settings.hero_bg_image || storefrontImg}
+              fallbackSrc={storefrontImg}
               alt="Crystal Ice Zimbabwe Physical Facility at FF11 Waterfalls Avenue"
+              containerClassName="w-full h-full min-h-[300px] lg:min-h-full"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0B223D]/90 via-transparent to-transparent pointer-events-none" />
