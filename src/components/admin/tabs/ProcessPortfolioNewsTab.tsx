@@ -61,7 +61,6 @@ export const ProcessPortfolioNewsTab: React.FC = () => {
   };
 
   const handleDeleteProcess = async (id: string) => {
-    if (!window.confirm('Delete this process step?')) return;
     try {
       await api.deleteProcessStep(id);
       fetchAll();
@@ -86,7 +85,6 @@ export const ProcessPortfolioNewsTab: React.FC = () => {
   };
 
   const handleDeletePortfolio = async (id: string) => {
-    if (!window.confirm('Delete this portfolio contract record?')) return;
     try {
       await api.deletePortfolioItem(id);
       fetchAll();
@@ -111,7 +109,6 @@ export const ProcessPortfolioNewsTab: React.FC = () => {
   };
 
   const handleDeleteNews = async (id: string) => {
-    if (!window.confirm('Delete this announcement?')) return;
     try {
       await api.deleteNewsItem(id);
       fetchAll();

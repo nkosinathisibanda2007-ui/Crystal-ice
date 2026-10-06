@@ -53,7 +53,6 @@ export const TestimonialsTab: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this testimonial permanently?')) return;
     try {
       await api.deleteTestimonial(id);
       setSuccess('Testimonial deleted');

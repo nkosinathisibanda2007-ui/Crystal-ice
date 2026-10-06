@@ -53,7 +53,6 @@ export const ServicesTab: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this service permanently?')) return;
     try {
       await api.deleteService(id);
       setSuccess('Service deleted');

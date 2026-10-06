@@ -123,38 +123,34 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
     setSuccessMessage(null);
 
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Data = reader.result as string;
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: file.name,
-            data: base64Data,
-            target
-          })
-        });
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('target', target);
 
-        if (!res.ok) {
-          throw new Error('Upload failed on server.');
-        }
+      const token = localStorage.getItem('arcticpure_admin_token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const data = await res.json();
-        setSuccessMessage(`Successfully uploaded "${file.name}" (${data.size_kb} KB) without alteration!`);
-        if (target === 'logo') {
-          setLogoPreview(data.url);
-        }
-        if (onRefreshData) {
-          onRefreshData();
-        }
-      };
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers,
+        body: formData
+      });
 
-      reader.onerror = () => {
-        setErrorMessage('Failed to read file from your device.');
-      };
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errJson.error || 'Upload failed on server.');
+      }
 
-      reader.readAsDataURL(file);
+      const data = await res.json();
+      const kb = data.size_kb || data.sizeKb || Math.round(file.size / 1024);
+      setSuccessMessage(`Successfully uploaded "${file.name}" (${kb} KB) without alteration!`);
+      if (target === 'logo') {
+        setLogoPreview(data.url);
+      }
+      if (onRefreshData) {
+        onRefreshData();
+      }
     } catch (err: any) {
       setErrorMessage(err.message || 'Error uploading image.');
     } finally {

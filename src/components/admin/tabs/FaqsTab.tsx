@@ -49,7 +49,6 @@ export const FaqsTab: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this FAQ permanently?')) return;
     try {
       await api.deleteFAQ(id);
       setSuccess('FAQ deleted');

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { WebsiteSettings, Service } from '../types/index.ts';
 import { api } from '../services/api.ts';
+import { BUSINESS_WHATSAPP_NUMBER } from '../config/whatsapp.ts';
 
 interface QuoteModalProps {
   isOpen: boolean;
@@ -46,6 +47,46 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Format delivery frequency for clear message display
+  const formatFrequency = (freq: string) => {
+    switch (freq) {
+      case 'weekly': return 'Weekly Automated Drop-off';
+      case 'daily': return 'Daily Morning Restock';
+      case 'bi_weekly': return 'Bi-Weekly Scheduled Route';
+      case 'one_time': return 'One-Time Event Staging';
+      case 'custom': return 'Custom Commercial Route';
+      default: return freq;
+    }
+  };
+
+  // Helper to compile all user-entered quote details into a clean, readable WhatsApp message
+  const generateWhatsAppMessage = (refNumber?: string) => {
+    const lines = [
+      `*COMMERCIAL ICE & BLAST FREEZING QUOTE REQUEST* 🧊`,
+      refNumber ? `*Reference:* #${refNumber}` : null,
+      ``,
+      `*Customer Details:*`,
+      `• *Name:* ${customerName.trim()}`,
+      businessName.trim() ? `• *Business / Organization:* ${businessName.trim()}` : null,
+      `• *Phone:* ${customerPhone.trim()}`,
+      `• *Email:* ${customerEmail.trim()}`,
+      ``,
+      `*Quote Requirements:*`,
+      `• *Supply Program:* ${serviceType}`,
+      `• *Delivery Frequency:* ${formatFrequency(deliveryFrequency)}`,
+      estimatedVolume.trim() ? `• *Estimated Volume:* ${estimatedVolume.trim()}` : null,
+      eventDate ? `• *Target Date:* ${eventDate}` : null,
+      deliveryLocation.trim() ? `• *Venue / Location:* ${deliveryLocation.trim()}` : null,
+      notes.trim() ? `• *Logistics & Instructions:* ${notes.trim()}` : null,
+      ``,
+      `_Sent via Crystal Ice Zimbabwe Website Quote Form_`
+    ];
+
+    return lines.filter((line) => line !== null).join('\n');
+  };
+
+  const targetWhatsAppNumber = BUSINESS_WHATSAPP_NUMBER || (settings.whatsapp_number ? settings.whatsapp_number.replace(/[^0-9]/g, '') : '263774213817');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -70,6 +111,19 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
         notes
       });
       setConfirmedQuote(res.quote);
+
+      // Build formatted WhatsApp message with all entered form data
+      const waText = generateWhatsAppMessage(res.quote?.reference_number);
+      const waUrl = `https://wa.me/${targetWhatsAppNumber}?text=${encodeURIComponent(waText)}`;
+
+      // Open WhatsApp/WhatsApp Web using a click-to-chat link
+      const link = document.createElement('a');
+      link.href = waUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to submit commercial quote request');
     } finally {
@@ -77,12 +131,11 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
     }
   };
 
-  const cleanWhatsappNumber = settings.whatsapp_number.replace(/[^0-9]/g, '');
   const quoteWhatsappUrl = confirmedQuote
-    ? `https://wa.me/${cleanWhatsappNumber}?text=${encodeURIComponent(
-        `Hello Crystal Ice Zimbabwe sales team, I have requested commercial quote #${confirmedQuote.reference_number} for ${confirmedQuote.customer_name}. Service: ${confirmedQuote.service_type}. Please provide rate proposal.`
+    ? `https://wa.me/${targetWhatsAppNumber}?text=${encodeURIComponent(
+        generateWhatsAppMessage(confirmedQuote.reference_number)
       )}`
-    : '';
+    : `https://wa.me/${targetWhatsAppNumber}?text=${encodeURIComponent(generateWhatsAppMessage())}`;
 
   return (
     <div

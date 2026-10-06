@@ -9,6 +9,7 @@ interface SkeletonImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   skeletonClassName?: string;
   fallbackSrc?: string;
   dark?: boolean;
+  priority?: boolean;
 }
 
 export const SkeletonImage: React.FC<SkeletonImageProps> = ({
@@ -19,27 +20,30 @@ export const SkeletonImage: React.FC<SkeletonImageProps> = ({
   skeletonClassName = '',
   fallbackSrc,
   dark = false,
+  priority = false,
   ...props
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
+  // If priority is true, image starts in loaded state to eliminate any 1.2s delay
+  const [isLoaded, setIsLoaded] = useState(() => priority);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Check if image is already cached in browser memory on mount or src change
   useEffect(() => {
-    setIsLoaded(false);
-    setHasError(false);
+    if (priority) {
+      setIsLoaded(true);
+      return;
+    }
 
     if (!src) {
       setHasError(true);
       return;
     }
 
-    // If the image is already completely cached by the browser
+    // Check if the image is already completely cached by the browser
     if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
       setIsLoaded(true);
     }
-  }, [src]);
+  }, [src, priority]);
 
   const handleLoad = () => {
     setIsLoaded(true);
@@ -58,15 +62,14 @@ export const SkeletonImage: React.FC<SkeletonImageProps> = ({
 
   return (
     <div className={`relative overflow-hidden ${containerClassName}`}>
-      {/* Skeleton Shimmer Overlay */}
-      {!isLoaded && (
+      {/* Background Skeleton: Sits BEHIND the image so progressive JPEGs paint immediately */}
+      {!isLoaded && !priority && (
         <div
           aria-hidden="true"
-          className={`absolute inset-0 z-10 overflow-hidden ${
+          className={`absolute inset-0 z-0 overflow-hidden ${
             dark ? 'bg-slate-900' : 'bg-slate-200'
           } ${skeletonClassName}`}
         >
-          {/* Animated Shimmer Wave */}
           <div
             className={`w-full h-full animate-pulse ${
               dark
@@ -78,16 +81,19 @@ export const SkeletonImage: React.FC<SkeletonImageProps> = ({
         </div>
       )}
 
-      {/* Actual Image with Fade-in on load */}
+      {/* Actual Image: Renders immediately on top with eager/progressive decoding */}
       {imageSrc ? (
         <img
           ref={imgRef}
           src={imageSrc}
           alt={alt}
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
+          decoding={priority ? 'sync' : 'async'}
           onLoad={handleLoad}
           onError={handleError}
-          className={`${className} transition-opacity duration-300 ease-out ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
+          className={`${className} relative z-1 transition-opacity duration-200 ease-out ${
+            priority || isLoaded ? 'opacity-100' : 'opacity-90'
           }`}
           {...props}
         />
@@ -99,7 +105,7 @@ export const SkeletonImage: React.FC<SkeletonImageProps> = ({
 
       {/* Fallback placeholder if image load fails completely */}
       {hasError && !fallbackSrc && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 text-slate-400 p-2 text-center text-xs">
+        <div className="absolute inset-0 z-2 flex flex-col items-center justify-center bg-slate-100 text-slate-400 p-2 text-center text-xs">
           <ImageIcon className="w-5 h-5 mb-1 opacity-50" />
           <span className="text-[10px] text-slate-400 line-clamp-1">{alt}</span>
         </div>

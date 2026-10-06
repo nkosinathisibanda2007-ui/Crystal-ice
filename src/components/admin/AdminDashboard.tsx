@@ -34,7 +34,8 @@ import {
   UploadCloud,
   ImageIcon,
   Share2,
-  Camera
+  Camera,
+  Zap
 } from 'lucide-react';
 import {
   Order,
@@ -57,6 +58,7 @@ import { MediaLibraryTab } from './tabs/MediaLibraryTab.tsx';
 import { ExactImageUploadInput } from './ExactImageUploadInput.tsx';
 import { LiveImageSlotManagerModal } from './LiveImageSlotManagerModal.tsx';
 import { UniversalUploaderExportModal } from './UniversalUploaderExportModal.tsx';
+import { UploaderTroubleshooterModal } from './UploaderTroubleshooterModal.tsx';
 
 interface AdminDashboardProps {
   onClose: () => void;
@@ -113,6 +115,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Exact Image Slot Manager & Universal Export States
   const [isSlotManagerOpen, setIsSlotManagerOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isTroubleshooterOpen, setIsTroubleshooterOpen] = useState(false);
   const [selectedSlotForManager, setSelectedSlotForManager] = useState<string | undefined>(undefined);
 
   // Data states
@@ -124,6 +127,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [settingsForm, setSettingsForm] = useState<WebsiteSettings>(initialSettings);
   const [settingsSaveSuccess, setSettingsSaveSuccess] = useState(false);
+
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const [dashboardSuccess, setDashboardSuccess] = useState<string | null>(null);
+  const [confirmDeleteProductId, setConfirmDeleteProductId] = useState<string | null>(null);
 
   // Role permissions
   const userRole: SystemRole = (user?.role as SystemRole) || 'staff';
@@ -230,8 +237,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
+      setDashboardSuccess('Order status updated successfully');
+      setTimeout(() => setDashboardSuccess(null), 3000);
     } catch (err: any) {
-      alert('Failed to update order status: ' + err.message);
+      setDashboardError('Failed to update order status: ' + err.message);
+      setTimeout(() => setDashboardError(null), 4000);
     }
   };
 
@@ -242,8 +252,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setQuotes((prev) =>
         prev.map((q) => (q.id === quoteId ? { ...q, status: newStatus } : q))
       );
+      setDashboardSuccess('Quote status updated successfully');
+      setTimeout(() => setDashboardSuccess(null), 3000);
     } catch (err: any) {
-      alert('Failed to update quote status: ' + err.message);
+      setDashboardError('Failed to update quote status: ' + err.message);
+      setTimeout(() => setDashboardError(null), 4000);
     }
   };
 
@@ -253,10 +266,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       await api.updateSettings(settingsForm);
       setSettingsSaveSuccess(true);
+      setDashboardSuccess('Website settings saved successfully');
       onRefreshData();
-      setTimeout(() => setSettingsSaveSuccess(false), 3000);
+      setTimeout(() => {
+        setSettingsSaveSuccess(false);
+        setDashboardSuccess(null);
+      }, 3000);
     } catch (err: any) {
-      alert('Failed to save settings: ' + err.message);
+      setDashboardError('Failed to save settings: ' + err.message);
+      setTimeout(() => setDashboardError(null), 4000);
     }
   };
 
@@ -266,26 +284,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       if (editingProduct) {
         await api.updateProduct(editingProduct.id, productForm);
+        setDashboardSuccess('Product updated successfully');
       } else {
         await api.createProduct(productForm);
+        setDashboardSuccess('Product created successfully');
       }
       setEditingProduct(null);
       setIsAddingProduct(false);
       loadAdminData();
       onRefreshData();
+      setTimeout(() => setDashboardSuccess(null), 3000);
     } catch (err: any) {
-      alert('Failed to save product: ' + err.message);
+      setDashboardError('Failed to save product: ' + err.message);
+      setTimeout(() => setDashboardError(null), 4000);
     }
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!window.confirm('Are you sure you want to remove this ice product?')) return;
     try {
       await api.deleteProduct(productId);
       setProducts((prev) => prev.filter((p) => p.id !== productId));
+      setConfirmDeleteProductId(null);
+      setDashboardSuccess('Product removed successfully');
       onRefreshData();
+      setTimeout(() => setDashboardSuccess(null), 3000);
     } catch (err: any) {
-      alert('Failed to delete product: ' + err.message);
+      setDashboardError('Failed to delete product: ' + err.message);
+      setTimeout(() => setDashboardError(null), 4000);
     }
   };
 
@@ -461,39 +486,63 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 />
               </div>
 
-              {/* Demo Credentials Quick-Fill Hint */}
-              <div className="p-2.5 bg-cyan-50 rounded-xl border border-cyan-200 text-[11px] text-cyan-900 flex items-center justify-between">
-                <span>Demo credentials: <strong>admin</strong> / <strong>iceadmin2026</strong></span>
+              {/* Quick Login & Credentials Info */}
+              <div className="p-3 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl border border-cyan-200 text-xs text-cyan-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div>
+                  <div className="font-semibold text-slate-800">Direct Admin Access</div>
+                  <div className="text-[11px] text-slate-600 font-mono mt-0.5">
+                    User: <strong>admin</strong> • Pass: <strong>iceadmin2026</strong>
+                  </div>
+                </div>
                 <button
+                  id="admin-one-click-login-btn"
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setUsername('admin');
                     setPassword('iceadmin2026');
+                    setLoginError('');
+                    setIsLoggingIn(true);
+                    try {
+                      const res = await api.adminLogin('admin', 'iceadmin2026');
+                      setToken(res.token);
+                      setUser(res.user);
+                      onRefreshData();
+                    } catch (err: any) {
+                      setLoginError(err.message || 'Quick login failed');
+                    } finally {
+                      setIsLoggingIn(false);
+                    }
                   }}
-                  className="text-cyan-700 font-bold hover:underline"
+                  disabled={isLoggingIn}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#0265B5] hover:bg-[#005599] text-white font-bold rounded-lg text-xs shadow-xs transition-transform active:scale-95 cursor-pointer disabled:opacity-50 shrink-0"
                 >
-                  Apply
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>{isLoggingIn ? 'Logging in...' : '1-Click Instant Login'}</span>
                 </button>
               </div>
 
-              <div className="pt-2 flex items-center gap-2">
+              <div className="pt-1 flex items-center gap-2">
                 <button
                   id="admin-login-submit"
                   type="submit"
                   disabled={isLoggingIn}
-                  className="flex-1 py-3 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Lock className="w-4 h-4" />
-                  <span>{isLoggingIn ? 'Verifying...' : 'Sign In to Portal'}</span>
+                  <span>{isLoggingIn ? 'Verifying...' : 'Sign In with Credentials'}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={onClose}
-                  className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors"
+                  className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors cursor-pointer"
                 >
-                  Cancel
+                  Close
                 </button>
+              </div>
+
+              <div className="text-center pt-2 text-[11px] text-slate-400">
+                🔒 Private portal. Hidden on the public website.
               </div>
             </form>
           </div>
@@ -548,6 +597,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            id="admin-troubleshoot-uploader-btn"
+            type="button"
+            onClick={() => setIsTroubleshooterOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+            title="Troubleshoot and diagnose image uploader health"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>Troubleshoot Uploader</span>
+          </button>
+
           <button
             id="admin-exact-image-uploader-top-btn"
             type="button"
@@ -1681,7 +1741,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* TAB: EXACT LOSSLESS MEDIA LIBRARY */}
           {/* ============================================================ */}
           {activeAdminTab === 'media' && (
-            <MediaLibraryTab onOpenLiveSlotManager={() => setIsSlotManagerOpen(true)} />
+            <MediaLibraryTab
+              onOpenLiveSlotManager={() => setIsSlotManagerOpen(true)}
+              onOpenTroubleshooter={() => setIsTroubleshooterOpen(true)}
+            />
           )}
 
           {/* ============================================================ */}
@@ -1755,6 +1818,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <UniversalUploaderExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
+      />
+
+      {/* Image Uploader Troubleshooting & Diagnostics Modal */}
+      <UploaderTroubleshooterModal
+        isOpen={isTroubleshooterOpen}
+        onClose={() => setIsTroubleshooterOpen(false)}
+        onRefreshSiteData={() => {
+          loadAdminData();
+          onRefreshData();
+        }}
       />
     </div>
   );

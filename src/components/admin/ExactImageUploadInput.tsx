@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, CheckCircle2, AlertCircle, RefreshCw, Eye, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { UploadCloud, CheckCircle2, AlertCircle, RefreshCw, X, Sparkles } from 'lucide-react';
 import { api } from '../../services/api.ts';
 
 interface ExactImageUploadInputProps {
@@ -18,6 +18,7 @@ export const ExactImageUploadInput: React.FC<ExactImageUploadInputProps> = ({
   helperText = 'Uploads byte-for-byte original file without lossy recompression'
 }) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [uploadStats, setUploadStats] = useState<{
     originalName?: string;
     sizeKb?: number;
@@ -26,9 +27,16 @@ export const ExactImageUploadInput: React.FC<ExactImageUploadInputProps> = ({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError(`"${file.name}" is not an image file (type: ${file.type || 'unknown'}).`);
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      setError(`File size exceeds the 50MB limit (${(file.size / (1024 * 1024)).toFixed(1)}MB).`);
+      return;
+    }
 
     setError(null);
     setIsUploading(true);
@@ -51,8 +59,52 @@ export const ExactImageUploadInput: React.FC<ExactImageUploadInputProps> = ({
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          processFile(file);
+          break;
+        }
+      }
+    }
+  };
+
   return (
-    <div className="space-y-2">
+    <div
+      className="space-y-2"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onPaste={handlePaste}
+    >
       <div className="flex items-center justify-between">
         <label className="block text-xs font-semibold text-slate-700">
           {label}
@@ -63,13 +115,13 @@ export const ExactImageUploadInput: React.FC<ExactImageUploadInputProps> = ({
         </span>
       </div>
 
-      <div className="flex gap-2">
+      <div className={`flex gap-2 p-1 rounded-xl transition-colors ${isDragging ? 'bg-cyan-50 border-2 border-dashed border-cyan-400' : ''}`}>
         <div className="relative flex-1">
           <input
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="/uploads/... or https://..."
+            placeholder="/uploads/... or paste/drop image"
             className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0265B5] focus:border-[#0265B5] font-mono text-slate-800"
           />
         </div>
@@ -88,7 +140,7 @@ export const ExactImageUploadInput: React.FC<ExactImageUploadInputProps> = ({
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
           className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-60"
-          title="Upload exact original image file"
+          title="Upload or drop exact original image file"
         >
           {isUploading ? (
             <>
@@ -98,10 +150,21 @@ export const ExactImageUploadInput: React.FC<ExactImageUploadInputProps> = ({
           ) : (
             <>
               <UploadCloud className="w-3.5 h-3.5 text-[#0265B5]" />
-              <span>Upload Exact</span>
+              <span>Upload / Drop</span>
             </>
           )}
         </button>
+
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-slate-200 transition-colors"
+            title="Clear image"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       {helperText && (
@@ -138,7 +201,7 @@ export const ExactImageUploadInput: React.FC<ExactImageUploadInputProps> = ({
               }}
             />
           </div>
-          <div className="text-[11px] text-slate-600 overflow-hidden">
+          <div className="text-[11px] text-slate-600 overflow-hidden flex-1">
             <div className="font-medium text-slate-800 truncate">{value}</div>
             <div className="text-slate-400 mt-0.5">
               Rendered with <code className="text-[#0265B5]">object-contain</code> to preserve exact aspect ratio

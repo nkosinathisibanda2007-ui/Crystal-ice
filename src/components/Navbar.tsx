@@ -50,6 +50,24 @@ export const Navbar: React.FC<NavbarProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const logoTapCountRef = React.useRef<{ count: number; lastTime: number }>({ count: 0, lastTime: 0 });
+
+  const handleLogoClick = () => {
+    const now = Date.now();
+    if (now - logoTapCountRef.current.lastTime < 1200) {
+      logoTapCountRef.current.count += 1;
+      if (logoTapCountRef.current.count >= 3) {
+        window.dispatchEvent(new CustomEvent('open-crystal-admin'));
+        logoTapCountRef.current.count = 0;
+        return;
+      }
+    } else {
+      logoTapCountRef.current.count = 1;
+    }
+    logoTapCountRef.current.lastTime = now;
+    handleNavClick('home');
+  };
+
   const cleanWhatsappNumber = settings.whatsapp_number.replace(/[^0-9]/g, '');
   const whatsappUrl = `https://wa.me/${cleanWhatsappNumber}?text=${encodeURIComponent(settings.whatsapp_prefilled_message)}`;
 
@@ -66,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Official Full Crystal Ice Zimbabwe Logo */}
           <button
             id="nav-logo-button"
-            onClick={() => handleNavClick('home')}
+            onClick={handleLogoClick}
             className="flex items-center text-left group focus:outline-none"
             aria-label="Crystal Ice Zimbabwe Homepage"
           >

@@ -11,16 +11,18 @@ import {
   ExternalLink,
   ShieldCheck,
   Sparkles,
-  Filter
+  Filter,
+  Zap
 } from 'lucide-react';
 import { MediaItem } from '../../../types/index.ts';
 import { api } from '../../../services/api.ts';
 
 interface MediaLibraryTabProps {
   onOpenLiveSlotManager?: () => void;
+  onOpenTroubleshooter?: () => void;
 }
 
-export const MediaLibraryTab: React.FC<MediaLibraryTabProps> = ({ onOpenLiveSlotManager }) => {
+export const MediaLibraryTab: React.FC<MediaLibraryTabProps> = ({ onOpenLiveSlotManager, onOpenTroubleshooter }) => {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +128,18 @@ export const MediaLibraryTab: React.FC<MediaLibraryTabProps> = ({ onOpenLiveSlot
             className="hidden"
             id="admin-media-file-picker"
           />
+
+          {onOpenTroubleshooter && (
+            <button
+              type="button"
+              onClick={onOpenTroubleshooter}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              title="Test and diagnose image uploader"
+            >
+              <Zap className="w-4 h-4" />
+              <span>Troubleshoot Uploader</span>
+            </button>
+          )}
 
           {onOpenLiveSlotManager && (
             <button

@@ -122,6 +122,7 @@ export const StorefrontCenterpiece: React.FC<StorefrontCenterpieceProps> = ({
               src={settings.storefront_image || settings.hero_bg_image || "/crystal_ice_storefront.jpg"}
               fallbackSrc="/crystal_ice_storefront.jpg"
               alt="Crystal Ice Zimbabwe Storefront & Plant Facility in Waterfalls, Harare"
+              priority={true}
               containerClassName="w-full h-full"
               className="w-full h-full object-cover object-center"
             />

@@ -51,7 +51,6 @@ export const DeliveryAreasTab: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this delivery area permanently?')) return;
     try {
       await api.deleteDeliveryArea(id);
       setSuccess('Area deleted');

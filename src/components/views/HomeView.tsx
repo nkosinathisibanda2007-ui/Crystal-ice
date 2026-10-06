@@ -14,12 +14,9 @@ import {
   Phone,
   CheckCircle2,
   Sparkles,
-  Calculator,
   Factory
 } from 'lucide-react';
 import { Product, Service, Testimonial, FAQ, WebsiteSettings, Statistic, DeliveryArea } from '../../types/index.ts';
-import { BlastFreezingCalculator } from '../BlastFreezingCalculator.tsx';
-import { AuthenticShowcase } from '../plant/AuthenticShowcase.tsx';
 import { SkeletonImage } from '../SkeletonImage.tsx';
 
 // Exact User Uploaded Photos
@@ -58,8 +55,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onSelectProduct,
   onNavigateTab
 }) => {
-  const [showPlantTools, setShowPlantTools] = useState(false);
-
   const cleanWhatsappNumber = settings.whatsapp_number.replace(/[^0-9]/g, '');
   const whatsappUrl = `https://wa.me/${cleanWhatsappNumber}?text=${encodeURIComponent(
     settings.whatsapp_prefilled_message || 'Hello Crystal Ice Zimbabwe, I would like to order ice.'
@@ -81,6 +76,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             src={settings.hero_bg_image || "/crystal_ice_backdrop.jpg"}
             fallbackSrc="/crystal_ice_backdrop.jpg"
             alt="Crystal Ice Zimbabwe Packaged Ice & Plant Facility"
+            priority={true}
             dark={true}
             containerClassName="w-full h-full"
             className="w-full h-full object-cover object-center scale-100"
@@ -191,6 +187,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     src={iceCubesProduct?.image || productIceCubesImg}
                     fallbackSrc={productIceCubesImg}
                     alt="Crystal clear food-grade Ice Cubes"
+                    priority={true}
                     containerClassName="w-full h-full"
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   />
@@ -229,6 +226,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     src={iceBlocksProduct?.image || productIceBlocksImg}
                     fallbackSrc={productIceBlocksImg}
                     alt="High-density solid Ice Blocks"
+                    priority={true}
                     containerClassName="w-full h-full"
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   />
@@ -267,6 +265,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     src={products.find(p => p.category.includes('Blast') || p.name.includes('Blast'))?.image || productMeatBlastImg}
                     fallbackSrc={productMeatBlastImg}
                     alt="Commercial Meat Blast Freezing Chamber"
+                    priority={true}
                     containerClassName="w-full h-full"
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   />
@@ -314,6 +313,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   src={settings.homepage_about_image || settings.about_facility_image || productIceCubesImg}
                   fallbackSrc={productIceCubesImg}
                   alt="Crystal Ice Zimbabwe pure ice crystals"
+                  priority={true}
                   containerClassName="w-full h-full min-h-[240px] md:min-h-full"
                   className="w-full h-full object-cover object-center"
                 />
@@ -524,51 +524,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ============================================================ */}
-      {/* 6. EXPANDABLE INDUSTRIAL TOOLS & AUTHENTIC PLANT SHOWCASE */}
-      {/* Keeps 100% of existing functionality, calculator & circulars */}
-      {/* ============================================================ */}
-      <section className="py-12 bg-slate-50/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-3xl bg-white shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-blue-50 text-[#0265B5] flex items-center justify-center shrink-0">
-                <Calculator className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 font-['Outfit']">
-                  Industrial Meat Blast Freezing Calculator & Plant Photos
-                </h4>
-                <p className="text-xs text-slate-500">
-                  Calculate chicken ($0.25/bird) and beef ($0.20/kg) blast freezing rates or inspect our Waterfalls cold facility.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowPlantTools(!showPlantTools)}
-              className="px-4 py-2 text-xs font-bold text-[#0265B5] bg-blue-50 hover:bg-blue-100 rounded-full transition-colors shrink-0"
-            >
-              {showPlantTools ? 'Hide Plant Tools' : 'Open Rate Calculator & Plant Tools'}
-            </button>
-          </div>
-
-          {showPlantTools && (
-            <div className="mt-8 space-y-12 animate-in fade-in duration-300">
-              <BlastFreezingCalculator
-                settings={settings}
-                onOpenQuoteModal={onOpenQuoteModal}
-              />
-              <AuthenticShowcase
-                settings={settings}
-                onOpenOrderModal={() => onOpenOrderModal(iceCubesProduct)}
-                onOpenQuoteModal={onOpenQuoteModal}
-              />
-            </div>
-          )}
         </div>
       </section>
     </div>

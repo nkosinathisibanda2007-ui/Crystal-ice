@@ -9,7 +9,9 @@ import {
   ShieldCheck,
   CheckCircle2,
   Clock,
-  Sparkles
+  Sparkles,
+  X,
+  RotateCcw
 } from 'lucide-react';
 import { Product, WebsiteSettings } from '../../types/index.ts';
 import { BlastFreezingCalculator } from '../BlastFreezingCalculator.tsx';
@@ -48,22 +50,36 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const categories = useMemo(() => {
-    const cats = ['All'];
-    products.forEach((p) => {
-      if (p.category && !cats.includes(p.category)) {
-        cats.push(p.category);
-      }
-    });
-    return cats;
-  }, [products]);
+    return [
+      'All',
+      'Packaged Ice Cubes',
+      'Solid Ice Blocks',
+      'Meat Blast Freezing',
+      'Commercial Contracts'
+    ];
+  }, []);
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
+      const q = searchQuery.toLowerCase().trim();
+
       const matchesCategory =
-        selectedCategory === 'All' || p.category === selectedCategory;
+        selectedCategory === 'All' ||
+        p.category === selectedCategory ||
+        (selectedCategory === 'Meat Blast Freezing' && (p.category.includes('Blast') || p.name.includes('Blast'))) ||
+        (selectedCategory === 'Solid Ice Blocks' && (p.category.includes('Solid') || p.name.includes('Block') || p.package_size?.includes('Block'))) ||
+        (selectedCategory === 'Packaged Ice Cubes' && (p.category.includes('Cube') || p.name.includes('Cubes') || p.name.includes('Packaged'))) ||
+        (selectedCategory === 'Commercial Contracts' && (p.category.includes('Contract') || p.name.includes('Contract') || p.availability === 'bulk_only'));
+
       const matchesSearch =
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        (p.package_size && p.package_size.toLowerCase().includes(q)) ||
+        (p.ideal_for && p.ideal_for.some((f) => f.toLowerCase().includes(q))) ||
+        (p.features && p.features.some((f) => f.toLowerCase().includes(q)));
+
       return matchesCategory && matchesSearch;
     });
   }, [products, selectedCategory, searchQuery]);
@@ -149,49 +165,107 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
           {/* Search Input */}
           <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Search products or services..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs bg-white rounded-full shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0265B5]"
+              className="w-full pl-9 pr-9 py-2 text-xs bg-white rounded-full shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0265B5]"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Special Offer Highlight Banner */}
-        <div className="mb-12 rounded-3xl bg-gradient-to-r from-[#0B223D] via-[#0D2E55] to-[#0B223D] text-white p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
-          <div className="space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
-              Harare 2.5kg Pack Pricing
-            </span>
-            <h3 className="text-2xl font-black font-['Outfit']">
-              $1.00 Retail • $0.75 for 100+ Packs
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-              Standard retail price is $1.00 per 2.5kg bag. For restaurants, bars, and functions ordering a minimum of 100 packs, our special rate is $0.75 per bag with refrigerated delivery included across Harare.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+        {/* Active Filter Feedback & Reset */}
+        <div className="flex items-center justify-between text-xs text-slate-500 mb-6 px-1">
+          <span>
+            Showing <strong className="text-slate-800">{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'solution' : 'solutions'}
+            {selectedCategory !== 'All' && (
+              <span> in <strong className="text-[#0265B5]">{selectedCategory}</strong></span>
+            )}
+            {searchQuery && (
+              <span> matching "<strong className="text-slate-800">{searchQuery}</strong>"</span>
+            )}
+          </span>
+          {(selectedCategory !== 'All' || searchQuery) && (
             <button
-              onClick={() => onOpenOrderModal(products.find(p => p.name.includes('2.5kg')))}
-              className="px-6 py-2.5 bg-[#0265B5] hover:bg-[#005599] text-white font-bold rounded-full text-xs sm:text-sm shadow-md transition-all active:scale-95"
+              onClick={() => {
+                setSelectedCategory('All');
+                setSearchQuery('');
+              }}
+              className="inline-flex items-center gap-1 text-[#0265B5] hover:text-[#005599] font-bold text-xs"
             >
-              Order 2.5kg Bags
+              <RotateCcw className="w-3 h-3" />
+              <span>Show all</span>
             </button>
-            <a
-              href={wholesaleWhatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-full text-xs sm:text-sm transition-all flex items-center gap-2"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>WhatsApp Inquiries</span>
-            </a>
-          </div>
+          )}
         </div>
+
+        {/* Special Offer Highlight Banner - only shown when relevant to ice cubes, not pushing other categories off screen */}
+        {!searchQuery && (selectedCategory === 'All' || selectedCategory === 'Packaged Ice Cubes') && (
+          <div className="mb-12 rounded-3xl bg-gradient-to-r from-[#0B223D] via-[#0D2E55] to-[#0B223D] text-white p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl animate-in fade-in duration-200">
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400">
+                Harare 2.5kg Pack Pricing
+              </span>
+              <h3 className="text-2xl font-black font-['Outfit']">
+                $1.00 Retail • $0.75 for 100+ Packs
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                Standard retail price is $1.00 per 2.5kg bag. For restaurants, bars, and functions ordering a minimum of 100 packs, our special rate is $0.75 per bag with refrigerated delivery included across Harare.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <button
+                onClick={() => onOpenOrderModal(products.find(p => p.name.includes('2.5kg')))}
+                className="px-6 py-2.5 bg-[#0265B5] hover:bg-[#005599] text-white font-bold rounded-full text-xs sm:text-sm shadow-md transition-all active:scale-95"
+              >
+                Order 2.5kg Bags
+              </button>
+              <a
+                href={wholesaleWhatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-full text-xs sm:text-sm transition-all flex items-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp Inquiries</span>
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Empty State when no products match filter */}
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-16 bg-slate-50 rounded-3xl p-8 mb-12 border border-dashed border-slate-200">
+            <div className="w-12 h-12 bg-blue-100 text-[#0265B5] rounded-full flex items-center justify-center mx-auto mb-3">
+              <Search className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 font-['Outfit']">No products found</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              No products or services match "{searchQuery}" in {selectedCategory === 'All' ? 'our catalog' : selectedCategory}.
+            </p>
+            <button
+              onClick={() => {
+                setSelectedCategory('All');
+                setSearchQuery('');
+              }}
+              className="mt-4 px-5 py-2 bg-[#0265B5] text-white text-xs font-bold rounded-full hover:bg-[#005599] transition-colors"
+            >
+              Reset to All Products
+            </button>
+          </div>
+        )}
 
         {/* Product Cards Grid matching Reference Styling (Borderless Elevated Cards) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

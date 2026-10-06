@@ -27,7 +27,7 @@
     "seo_keywords": "Crystal Ice Zimbabwe, ice supplier Harare, ice cubes Zimbabwe, 2.5kg ice bag, 5kg ice bag, 10kg ice block Harare, meat blast freezing Zimbabwe, chicken blast freezing Waterfalls Harare, restaurant ice delivery Harare",
     "hero_bg_image": "/crystal_ice_backdrop.jpg",
     "logo_url": "/crystal_ice_logo.png",
-    "bootstrap_complete": false
+    "bootstrap_complete": true
   },
   "statistics": [
     {
@@ -592,6 +592,22 @@
   ],
   "quote_requests": [
     {
+      "customer_name": "Tatenda Moyo",
+      "business_name": "Borrowdale Country Club",
+      "customer_phone": "+263774000111",
+      "customer_email": "tatenda@borrowdale.co.zw",
+      "service_type": "Daily Commercial Supply",
+      "estimated_volume": "200 bags weekly",
+      "delivery_frequency": "weekly",
+      "delivery_location": "Borrowdale, Harare",
+      "notes": "",
+      "id": "qte-1791223698608",
+      "reference_number": "CI-QTE-9262",
+      "status": "New",
+      "created_at": "2026-10-05T18:08:18.608Z",
+      "updated_at": "2026-10-05T18:08:18.608Z"
+    },
+    {
       "customer_name": "Harare Grill",
       "customer_phone": "+263772000111",
       "customer_email": "chef@hararegrill.co.zw",
@@ -662,6 +678,22 @@
     }
   ],
   "media": [
+    {
+      "name": "ping.png",
+      "url": "/uploads/ping-1791285268125-335898360.png",
+      "category": "products",
+      "size_kb": 0,
+      "id": "med-1791285268131",
+      "uploaded_at": "2026-10-06"
+    },
+    {
+      "name": "test-slot.png",
+      "url": "/uploads/test-slot-1791284733467-530968639.png",
+      "category": "facilities",
+      "size_kb": 0,
+      "id": "med-1791284733495",
+      "uploaded_at": "2026-10-06"
+    },
     {
       "name": "crystal_ice_backdrop.jpg",
       "url": "/uploads/crystal_ice_backdrop-1791041526631-722792780.jpg",
@@ -745,6 +777,15 @@
   ],
   "notifications": [
     {
+      "id": "notif-1791223698609-908",
+      "title": "Commercial Quote Requested",
+      "message": "Quote CI-QTE-9262 submitted by Tatenda Moyo (Borrowdale Country Club) for Daily Commercial Supply",
+      "type": "quote",
+      "reference_id": "CI-QTE-9262",
+      "read": false,
+      "created_at": "2026-10-05T18:08:18.609Z"
+    },
+    {
       "id": "notif-1791107229271-890",
       "title": "New Contact Inquiry",
       "message": "Chipo Banda submitted an inquiry regarding General",
@@ -809,6 +850,110 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "aud-1791285268132-622",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791285268131",
+      "details": "Added media asset: ping.png",
+      "timestamp": "2026-10-06T11:14:28.132Z"
+    },
+    {
+      "id": "aud-1791285268082-650",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "LOGIN_SUCCESS",
+      "record_type": "auth",
+      "details": "Staff logged in: admin@crystalice.co.zw (admin)",
+      "timestamp": "2026-10-06T11:14:28.082Z"
+    },
+    {
+      "id": "aud-1791284740776-372",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "hero-backdrop",
+      "details": "Replaced picture in slot \"hero-backdrop\" with \"/crystal_ice_backdrop.jpg\".",
+      "timestamp": "2026-10-06T11:05:40.776Z"
+    },
+    {
+      "id": "aud-1791284740756-665",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "LOGIN_SUCCESS",
+      "record_type": "auth",
+      "details": "Staff logged in: admin@crystalice.co.zw (admin)",
+      "timestamp": "2026-10-06T11:05:40.756Z"
+    },
+    {
+      "id": "aud-1791284733496-381",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791284733495",
+      "details": "Added media asset: test-slot.png",
+      "timestamp": "2026-10-06T11:05:33.496Z"
+    },
+    {
+      "id": "aud-1791284733494-577",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "hero-backdrop",
+      "details": "Replaced picture in slot \"hero-backdrop\" with \"/uploads/test-slot-1791284733467-530968639.png\".",
+      "timestamp": "2026-10-06T11:05:33.494Z"
+    },
+    {
+      "id": "aud-1791284733446-17",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "LOGIN_SUCCESS",
+      "record_type": "auth",
+      "details": "Staff logged in: admin@crystalice.co.zw (admin)",
+      "timestamp": "2026-10-06T11:05:33.446Z"
+    },
+    {
+      "id": "aud-1791284709881-280",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "LOGIN_SUCCESS",
+      "record_type": "auth",
+      "details": "Staff logged in: admin@crystalice.co.zw (admin)",
+      "timestamp": "2026-10-06T11:05:09.881Z"
+    },
+    {
+      "id": "aud-1791284696911-272",
+      "user_name": "Unknown",
+      "user_role": "guest",
+      "action": "LOGIN_FAILED",
+      "record_type": "auth",
+      "details": "Failed login attempt for: admin",
+      "timestamp": "2026-10-06T11:04:56.911Z"
+    },
+    {
+      "id": "aud-1791284464193-939",
+      "user_name": "Unknown",
+      "user_role": "guest",
+      "action": "LOGIN_FAILED",
+      "record_type": "auth",
+      "details": "Failed login attempt for: admin",
+      "timestamp": "2026-10-06T11:01:04.193Z"
+    },
+    {
+      "id": "aud-1791223698609-727",
+      "user_name": "Guest Customer",
+      "user_role": "guest",
+      "action": "QUOTE_REQUESTED",
+      "record_type": "quote",
+      "record_id": "qte-1791223698608",
+      "details": "Quote request CI-QTE-9262 submitted by Tatenda Moyo",
+      "timestamp": "2026-10-05T18:08:18.609Z"
+    },
     {
       "id": "aud-1791107229271-139",
       "user_name": "Guest Customer",
@@ -1091,9 +1236,52 @@
       "timestamp": "2026-09-08T17:00:34.154Z"
     }
   ],
-  "admin_users": [],
-  "sessions": [],
-  "user_roles": [],
+  "admin_users": [
+    {
+      "id": "usr-admin-1",
+      "email": "admin@crystalice.co.zw",
+      "name": "Operations Director",
+      "active": true,
+      "passwordHash": "dfd8b282f646bb1983d558e52209451a9cf003eedda33d32e771d561a3ba3a6e56ad6c7a89a160d0801155adeee333375a5e712e08ec1e94e3bda720740f4c90",
+      "salt": "17dde3a89c3f41fe1f404ea66c4f58c9",
+      "created_at": "2026-10-06T11:05:04.213Z"
+    }
+  ],
+  "sessions": [
+    {
+      "token": "74582a18d067386b2eba0262d0ef5fc47e51a188d25de3cbbd7af128df0d5ca7",
+      "userId": "usr-admin-1",
+      "createdAt": "2026-10-06T11:05:09.881Z",
+      "expiresAt": "2026-10-13T11:05:09.881Z"
+    },
+    {
+      "token": "78679cec3cc41ed015926d49227cbc3a888169bfa1c469ae691d7a64817cd297",
+      "userId": "usr-admin-1",
+      "createdAt": "2026-10-06T11:05:33.446Z",
+      "expiresAt": "2026-10-13T11:05:33.446Z"
+    },
+    {
+      "token": "622bc4cc165c676d50d9c4cf6014778f84ca4ef3ecbef5a65d4ccddf67c1014e",
+      "userId": "usr-admin-1",
+      "createdAt": "2026-10-06T11:05:40.756Z",
+      "expiresAt": "2026-10-13T11:05:40.756Z"
+    },
+    {
+      "token": "5fdcc2373ed9828cc2623b37e3307bb69b91c0166364f145d0e4475cfcff0760",
+      "userId": "usr-admin-1",
+      "createdAt": "2026-10-06T11:14:28.082Z",
+      "expiresAt": "2026-10-13T11:14:28.082Z"
+    }
+  ],
+  "user_roles": [
+    {
+      "id": "role-1",
+      "user_id": "usr-admin-1",
+      "role": "admin",
+      "assigned_at": "2026-10-06T11:05:04.214Z",
+      "assigned_by": "system_default"
+    }
+  ],
   "process_steps": [
     {
       "id": "step-1",

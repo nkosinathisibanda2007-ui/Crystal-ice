@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   MessageCircle,
   MapPin,
@@ -10,6 +10,7 @@ import {
 import { WebsiteSettings } from '../types/index.ts';
 import { CrystalIceLogo } from './CrystalIceLogo.tsx';
 import { SocialLinks } from './SocialLinks.tsx';
+import { LegalModal, LegalTab } from './LegalModal.tsx';
 
 interface FooterProps {
   settings: WebsiteSettings;
@@ -24,6 +25,30 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenOrderModal,
   onOpenQuoteModal
 }) => {
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalTab>('privacy');
+
+  const handleOpenLegal = (tab: LegalTab) => {
+    setLegalTab(tab);
+    setIsLegalModalOpen(true);
+  };
+
+  const footerTapCountRef = React.useRef<{ count: number; lastTime: number }>({ count: 0, lastTime: 0 });
+
+  const handleCopyrightClick = () => {
+    const now = Date.now();
+    if (now - footerTapCountRef.current.lastTime < 1200) {
+      footerTapCountRef.current.count += 1;
+      if (footerTapCountRef.current.count >= 3) {
+        window.dispatchEvent(new CustomEvent('open-crystal-admin'));
+        footerTapCountRef.current.count = 0;
+      }
+    } else {
+      footerTapCountRef.current.count = 1;
+    }
+    footerTapCountRef.current.lastTime = now;
+  };
+
   const handleNav = (tab: string) => {
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -150,19 +175,47 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         </div>
 
-        {/* Bottom Bar: Exact Copyright & Tagline */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <div>
-            © {new Date().getFullYear()} Crystal Ice Zimbabwe. All rights reserved.
+        {/* Bottom Bar: Copyright, Subtle Legal Links & Tagline */}
+        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div
+            onClick={handleCopyrightClick}
+            className="cursor-default select-none"
+            title="Crystal Ice Zimbabwe"
+          >
+            © {new Date().getFullYear()} {settings.company_name || 'Crystal Ice Zimbabwe'}. All rights reserved.
           </div>
 
-          <div className="flex items-center gap-6">
-            <span className="text-slate-400 font-medium">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] sm:text-xs">
+            <button
+              id="footer-legal-privacy-btn"
+              onClick={() => handleOpenLegal('privacy')}
+              className="text-slate-400 hover:text-white transition-colors underline-offset-4 hover:underline cursor-pointer"
+            >
+              Privacy
+            </button>
+            <span className="text-slate-600 select-none">•</span>
+            <button
+              id="footer-legal-terms-btn"
+              onClick={() => handleOpenLegal('terms')}
+              className="text-slate-400 hover:text-white transition-colors underline-offset-4 hover:underline cursor-pointer"
+            >
+              Terms &amp; Conditions
+            </button>
+            <span className="text-slate-600 select-none hidden sm:inline">•</span>
+            <span className="text-slate-400 font-medium hidden sm:inline">
               Pure Ice. Built for Zimbabwe.
             </span>
           </div>
         </div>
       </div>
+
+      {/* Accessible, Lightweight Legal Information Modal */}
+      <LegalModal
+        isOpen={isLegalModalOpen}
+        onClose={() => setIsLegalModalOpen(false)}
+        defaultTab={legalTab}
+        settings={settings}
+      />
     </footer>
   );
 };

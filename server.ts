@@ -21,8 +21,8 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Serve uploaded original files directly and statically with cache headers
 app.use('/uploads', express.static(uploadsDir, {
-  maxAge: '1d',
-  immutable: false
+  maxAge: '7d',
+  immutable: true
 }));
 
 // Configure Multer storage to stream raw byte-for-byte binary data without transcoding or recompression
@@ -63,12 +63,15 @@ const upload = multer({
   }
 });
 
-// Security Headers Middleware
-app.use((_req, res, next) => {
+// Security & Cache Headers Middleware
+app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (req.method === 'GET' && req.path.startsWith('/api/public') && req.path !== '/api/public/events') {
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
+  }
   next();
 });
 
@@ -231,8 +234,11 @@ dbStore.onContentChange((entity: string) => {
 // PUBLIC API ROUTES
 // ----------------------------------------------------
 
+const PUBLIC_CACHE_CONTROL = 'public, max-age=120, stale-while-revalidate=600';
+
 // Single aggregated payload for instant public hydration
-app.get('/api/public/bootstrap', (req: Request, res: Response) => {
+app.get('/api/public/bootstrap', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   try {
     const data = {
       settings: dbStore.getPublicSettings(),
@@ -253,15 +259,18 @@ app.get('/api/public/bootstrap', (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/public/settings', (req: Request, res: Response) => {
+app.get('/api/public/settings', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   res.json(dbStore.getPublicSettings());
 });
 
-app.get('/api/public/products', (req: Request, res: Response) => {
+app.get('/api/public/products', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   res.json(dbStore.getPublicProducts());
 });
 
 app.get('/api/public/products/:slug', (req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   const product = dbStore.getPublicProductBySlug(req.params.slug);
   if (!product) {
     return res.status(404).json({ error: 'Product not found' });
@@ -269,32 +278,44 @@ app.get('/api/public/products/:slug', (req: Request, res: Response) => {
   res.json(product);
 });
 
-app.get('/api/public/services', (req: Request, res: Response) => {
+app.get('/api/public/services', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   res.json(dbStore.getPublicServices());
 });
 
-app.get('/api/public/testimonials', (req: Request, res: Response) => {
+app.get('/api/public/testimonials', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   res.json(dbStore.getPublicTestimonials());
 });
 
-app.get('/api/public/faqs', (req: Request, res: Response) => {
+app.get('/api/public/faqs', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   res.json(dbStore.getPublicFAQs());
 });
 
-app.get('/api/public/delivery-areas', (req: Request, res: Response) => {
+app.get('/api/public/delivery-areas', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   res.json(dbStore.getPublicDeliveryAreas());
 });
 
-app.get('/api/public/process-steps', (req: Request, res: Response) => {
+app.get('/api/public/process-steps', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   res.json(dbStore.getPublicProcessSteps());
 });
 
-app.get('/api/public/portfolio', (req: Request, res: Response) => {
+app.get('/api/public/portfolio', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   res.json(dbStore.getPublicPortfolioItems());
 });
 
-app.get('/api/public/news', (req: Request, res: Response) => {
+app.get('/api/public/news', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
   res.json(dbStore.getPublicNewsItems());
+});
+
+app.get('/api/public/statistics', (_req: Request, res: Response) => {
+  res.set('Cache-Control', PUBLIC_CACHE_CONTROL);
+  res.json(dbStore.getPublicStatistics());
 });
 
 // Public Guest Order Submission
@@ -808,8 +829,92 @@ app.delete('/api/admin/media/:id', requireAdminAuth, requirePermission('manage_m
 // ----------------------------------------------------
 // EXACT LOSSLESS IMAGE UPLOAD ENDPOINTS
 // Byte-for-byte binary streaming with zero transcoding
+// Supports both multipart/form-data and base64 JSON payloads
 // ----------------------------------------------------
 app.post('/api/upload', (req: Request, res: Response) => {
+  // Check if JSON base64 upload
+  const isJson = req.is('application/json') || req.body?.data || req.body?.base64;
+  if (isJson && (req.body?.data || req.body?.base64 || req.body?.image)) {
+    try {
+      const rawData = req.body.data || req.body.base64 || req.body.image;
+      const matches = typeof rawData === 'string' ? rawData.match(/^data:([A-Za-z0-9\-+\/]+);base64,(.+)$/) : null;
+      let buffer: Buffer;
+      let extension = 'jpg';
+      let mimeType = 'image/jpeg';
+
+      if (matches && matches.length === 3) {
+        mimeType = matches[1];
+        if (mimeType.includes('png')) extension = 'png';
+        else if (mimeType.includes('webp')) extension = 'webp';
+        else if (mimeType.includes('svg')) extension = 'svg';
+        else if (mimeType.includes('gif')) extension = 'gif';
+        buffer = Buffer.from(matches[2], 'base64');
+      } else {
+        buffer = Buffer.from(rawData, 'base64');
+      }
+
+      const rawName = req.body.name || `uploaded_${Date.now()}.${extension}`;
+      const safeName = `exact_${Date.now()}_${path.basename(rawName).replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const filePath = path.join(uploadsDir, safeName);
+
+      fs.writeFileSync(filePath, buffer);
+      const publicUrl = `/uploads/${safeName}`;
+      const sizeBytes = buffer.length;
+      const sizeKb = Math.round(sizeBytes / 1024);
+
+      // Handle optional target mapping (e.g. target: 'logo', target: 'photo-1', etc.)
+      const target = req.body.target;
+      if (target) {
+        if (target === 'logo') {
+          dbStore.replaceSiteImageSlot('site_logo', publicUrl);
+        } else if (target === 'hero-bg' || target === 'hero') {
+          dbStore.replaceSiteImageSlot('hero_backdrop', publicUrl);
+        } else if (target === 'storefront') {
+          dbStore.replaceSiteImageSlot('storefront_main', publicUrl);
+        } else {
+          try {
+            dbStore.replaceSiteImageSlot(target, publicUrl);
+          } catch {}
+        }
+      }
+
+      // Record in media library if authenticated
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const adminUser = dbStore.verifyToken(token);
+        if (adminUser) {
+          try {
+            dbStore.addMediaItem({
+              name: rawName,
+              url: publicUrl,
+              category: (req.body.category as any) || 'facilities',
+              size_kb: sizeKb
+            }, adminUser);
+          } catch {}
+        }
+      }
+
+      return res.json({
+        success: true,
+        url: publicUrl,
+        fileName: safeName,
+        originalName: rawName,
+        mimeType,
+        sizeBytes,
+        sizeKb,
+        size_kb: sizeKb,
+        lossless: true,
+        preservedOriginal: true,
+        uploadedAt: new Date().toISOString()
+      });
+    } catch (err: any) {
+      console.error('Base64 upload processing error:', err);
+      return res.status(500).json({ error: `Failed to process image: ${err.message}` });
+    }
+  }
+
+  // Handle standard multipart/form-data upload
   upload.single('file')(req, res, (err: any) => {
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {
@@ -855,6 +960,7 @@ app.post('/api/upload', (req: Request, res: Response) => {
       mimeType: req.file.mimetype,
       sizeBytes,
       sizeKb,
+      size_kb: sizeKb,
       lossless: true,
       preservedOriginal: true,
       uploadedAt: new Date().toISOString()
@@ -888,6 +994,58 @@ app.post('/api/upload/multiple', (req: Request, res: Response) => {
       count: results.length,
       files: results
     });
+  });
+});
+
+// Image Uploader Troubleshooting & System Health Check
+app.get('/api/admin/troubleshoot/uploader', requireAdminAuth, (req: AuthenticatedRequest, res: Response) => {
+  let writable = false;
+  let uploadsCount = 0;
+  let imageMagickAvailable = false;
+  let imageMagickVersion = 'Not installed';
+
+  try {
+    fs.accessSync(uploadsDir, fs.constants.W_OK);
+    writable = true;
+  } catch {}
+
+  try {
+    if (fs.existsSync(uploadsDir)) {
+      uploadsCount = fs.readdirSync(uploadsDir).length;
+    }
+  } catch {}
+
+  try {
+    const versionOut = child_process.execSync('convert -version', { encoding: 'utf-8', timeout: 2000 });
+    imageMagickAvailable = true;
+    imageMagickVersion = versionOut.split('\n')[0] || 'ImageMagick OK';
+  } catch {}
+
+  const slots = dbStore.getAllSiteImageSlots();
+
+  res.json({
+    status: writable ? 'healthy' : 'degraded',
+    uploadsDir,
+    uploadsDirExists: fs.existsSync(uploadsDir),
+    uploadsDirWritable: writable,
+    totalUploadedFiles: uploadsCount,
+    maxFileSizeMb: 50,
+    allowedMimeTypes: [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/svg+xml',
+      'image/avif',
+      'image/bmp',
+      'image/tiff'
+    ],
+    imageMagickAvailable,
+    imageMagickVersion,
+    totalConfiguredSlots: slots.length,
+    activeSlotsWithImages: slots.filter(s => !!s.currentUrl).length,
+    storageStrategy: 'Lossless byte-for-byte binary streaming (Multer + Static serve)',
+    timestamp: new Date().toISOString()
   });
 });
 

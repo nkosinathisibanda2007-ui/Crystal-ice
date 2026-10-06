@@ -229,7 +229,28 @@ export class DatabaseStore {
   private migrateAndEnsureDefaults(data: any): DatabaseSchema {
     let modified = false;
 
-    if (!data.user_roles) {
+    if (!data.admin_users || !Array.isArray(data.admin_users) || data.admin_users.length === 0) {
+      const initialSalt = crypto.randomBytes(16).toString('hex');
+      const initialAdminUser: StoredAdminUser = {
+        id: 'usr-admin-1',
+        email: 'admin@crystalice.co.zw',
+        name: 'Operations Director',
+        active: true,
+        passwordHash: hashPassword('iceadmin2026', initialSalt),
+        salt: initialSalt,
+        created_at: new Date().toISOString()
+      };
+      data.admin_users = [initialAdminUser];
+      data.user_roles = [{
+        id: 'role-1',
+        user_id: initialAdminUser.id,
+        role: 'admin' as SystemRole,
+        assigned_at: new Date().toISOString(),
+        assigned_by: 'system_default'
+      }];
+      data.settings.bootstrap_complete = true;
+      modified = true;
+    } else if (!data.user_roles) {
       data.user_roles = (data.admin_users || []).map((u: any, idx: number) => ({
         id: `role-${idx + 1}`,
         user_id: u.id,
@@ -1580,30 +1601,31 @@ export class DatabaseStore {
   public replaceSiteImageSlot(slotId: string, newUrl: string, adminUser?: AdminUser): boolean {
     const actorName = adminUser?.name || 'Google Studio AI / Admin Action';
     const actorRole = adminUser?.role || 'admin';
+    const normalized = slotId.trim().toLowerCase().replace(/-/g, '_');
 
-    if (slotId === 'hero_backdrop') {
+    if (normalized === 'hero_backdrop' || normalized === 'hero_bg' || normalized === 'hero') {
       this.data.settings.hero_bg_image = newUrl;
-    } else if (slotId === 'homepage_about_card') {
+    } else if (normalized === 'homepage_about_card' || normalized === 'about_card') {
       this.data.settings.homepage_about_image = newUrl;
-    } else if (slotId === 'storefront_main') {
+    } else if (normalized === 'storefront_main' || normalized === 'storefront') {
       this.data.settings.storefront_image = newUrl;
-    } else if (slotId === 'about_facility') {
+    } else if (normalized === 'about_facility' || normalized === 'about') {
       this.data.settings.about_facility_image = newUrl;
-    } else if (slotId === 'site_logo') {
+    } else if (normalized === 'site_logo' || normalized === 'logo') {
       this.data.settings.logo_url = newUrl;
-    } else if (slotId === 'delivery_fleet') {
+    } else if (normalized === 'delivery_fleet' || normalized === 'fleet') {
       this.data.settings.delivery_fleet_image = newUrl;
-    } else if (slotId === 'cold_storage_chamber') {
+    } else if (normalized === 'cold_storage_chamber' || normalized === 'cold_storage') {
       this.data.settings.cold_storage_image = newUrl;
-    } else if (slotId === 'ice_blocks_freezing') {
+    } else if (normalized === 'ice_blocks_freezing' || normalized === 'ice_blocks') {
       this.data.settings.ice_blocks_image = newUrl;
-    } else if (slotId === 'water_purification') {
+    } else if (normalized === 'water_purification' || normalized === 'purification') {
       this.data.settings.water_purification_image = newUrl;
-    } else if (slotId === 'contact_dispatch_facility') {
+    } else if (normalized === 'contact_dispatch_facility' || normalized === 'dispatch_facility') {
       this.data.settings.contact_dispatch_image = newUrl;
-    } else if (slotId === 'quality_assurance_lab') {
+    } else if (normalized === 'quality_assurance_lab' || normalized === 'lab') {
       this.data.settings.quality_assurance_image = newUrl;
-    } else if (slotId === 'emergency_backup_power') {
+    } else if (normalized === 'emergency_backup_power' || normalized === 'generator') {
       this.data.settings.generator_image = newUrl;
     } else if (slotId.startsWith('product-')) {
       const prodId = slotId.replace('product-', '');
@@ -1647,30 +1669,31 @@ export class DatabaseStore {
   public removeSiteImageSlot(slotId: string, adminUser?: AdminUser): boolean {
     const actorName = adminUser?.name || 'Google Studio AI / Admin Action';
     const actorRole = adminUser?.role || 'admin';
+    const normalized = slotId.trim().toLowerCase().replace(/-/g, '_');
 
-    if (slotId === 'hero_backdrop') {
+    if (normalized === 'hero_backdrop' || normalized === 'hero_bg' || normalized === 'hero') {
       this.data.settings.hero_bg_image = '';
-    } else if (slotId === 'homepage_about_card') {
+    } else if (normalized === 'homepage_about_card' || normalized === 'about_card') {
       this.data.settings.homepage_about_image = '';
-    } else if (slotId === 'storefront_main') {
+    } else if (normalized === 'storefront_main' || normalized === 'storefront') {
       this.data.settings.storefront_image = '';
-    } else if (slotId === 'about_facility') {
+    } else if (normalized === 'about_facility' || normalized === 'about') {
       this.data.settings.about_facility_image = '';
-    } else if (slotId === 'site_logo') {
+    } else if (normalized === 'site_logo' || normalized === 'logo') {
       this.data.settings.logo_url = '';
-    } else if (slotId === 'delivery_fleet') {
+    } else if (normalized === 'delivery_fleet' || normalized === 'fleet') {
       this.data.settings.delivery_fleet_image = '';
-    } else if (slotId === 'cold_storage_chamber') {
+    } else if (normalized === 'cold_storage_chamber' || normalized === 'cold_storage') {
       this.data.settings.cold_storage_image = '';
-    } else if (slotId === 'ice_blocks_freezing') {
+    } else if (normalized === 'ice_blocks_freezing' || normalized === 'ice_blocks') {
       this.data.settings.ice_blocks_image = '';
-    } else if (slotId === 'water_purification') {
+    } else if (normalized === 'water_purification' || normalized === 'purification') {
       this.data.settings.water_purification_image = '';
-    } else if (slotId === 'contact_dispatch_facility') {
+    } else if (normalized === 'contact_dispatch_facility' || normalized === 'dispatch_facility') {
       this.data.settings.contact_dispatch_image = '';
-    } else if (slotId === 'quality_assurance_lab') {
+    } else if (normalized === 'quality_assurance_lab' || normalized === 'lab') {
       this.data.settings.quality_assurance_image = '';
-    } else if (slotId === 'emergency_backup_power') {
+    } else if (normalized === 'emergency_backup_power' || normalized === 'generator') {
       this.data.settings.generator_image = '';
     } else if (slotId.startsWith('product-')) {
       const prodId = slotId.replace('product-', '');

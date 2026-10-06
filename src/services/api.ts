@@ -746,5 +746,23 @@ export const api = {
       throw new Error(err.error || 'Failed to remove image slot');
     }
     return res.json();
+  },
+
+  async troubleshootUploader(): Promise<{
+    status: 'healthy' | 'degraded';
+    uploadsDir: string;
+    uploadsDirExists: boolean;
+    uploadsDirWritable: boolean;
+    totalUploadedFiles: number;
+    maxFileSizeMb: number;
+    allowedMimeTypes: string[];
+    imageMagickAvailable: boolean;
+    imageMagickVersion: string;
+    totalConfiguredSlots: number;
+    activeSlotsWithImages: number;
+    storageStrategy: string;
+    timestamp: string;
+  }> {
+    return this.adminRequest('/api/admin/troubleshoot/uploader');
   }
 };
