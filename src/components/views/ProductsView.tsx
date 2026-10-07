@@ -16,6 +16,7 @@ import {
 import { Product, WebsiteSettings } from '../../types/index.ts';
 import { BlastFreezingCalculator } from '../BlastFreezingCalculator.tsx';
 import { SkeletonImage } from '../SkeletonImage.tsx';
+import { defaultProducts } from '../../data/defaultContent.ts';
 
 // Exact user photos respected in numerical order
 // Photo 2: 2.5kg ice cubes (cold room storage facility)
@@ -59,8 +60,14 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
     ];
   }, []);
 
+  // Fallback to core product catalog if products array is empty or undefined
+  // (guarantees Cloudflare Pages never displays "Showing 0 solutions")
+  const activeProducts = useMemo(() => {
+    return products && products.length > 0 ? products : defaultProducts;
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
+    return activeProducts.filter((p) => {
       const q = searchQuery.toLowerCase().trim();
 
       const matchesCategory =
@@ -227,7 +234,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <button
-                onClick={() => onOpenOrderModal(products.find(p => p.name.includes('2.5kg')))}
+                onClick={() => onOpenOrderModal(activeProducts.find(p => p.name.includes('2.5kg')))}
                 className="px-6 py-2.5 bg-[#0265B5] hover:bg-[#005599] text-white font-bold rounded-full text-xs sm:text-sm shadow-md transition-all active:scale-95"
               >
                 Order 2.5kg Bags

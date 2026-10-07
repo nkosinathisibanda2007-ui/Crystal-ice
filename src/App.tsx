@@ -27,33 +27,17 @@ import {
   Statistic,
   DeliveryArea
 } from './types/index.ts';
+import {
+  defaultSettings,
+  defaultProducts,
+  defaultServices,
+  defaultTestimonials,
+  defaultFaqs,
+  defaultDeliveryAreas,
+  defaultStatistics
+} from './data/defaultContent.ts';
 import { api } from './services/api.ts';
 import { MessageCircle, Phone, Snowflake, ArrowUp, Shield, X } from 'lucide-react';
-
-// Default initial state
-const defaultSettings: WebsiteSettings = {
-  company_name: "Crystal Ice Zimbabwe",
-  tagline: "Quality Ice Cubes, Solid Ice Blocks & Meat Blast Freezing in Harare",
-  phone_primary: "+263 774 213 817",
-  phone_secondary: "+263 774 213 817",
-  email: "sales@crystalice.co.zw",
-  whatsapp_number: "+263774213817",
-  whatsapp_prefilled_message: "Hello Crystal Ice Zimbabwe, I would like to order ice / inquire about restaurant supply or meat blast freezing.",
-  business_hours: "Mon - Thu: 7:30 AM – 4:45 PM | Fri: 7:00 AM – 4:15 PM (Deliveries active across Harare)",
-  physical_address: "FF11 Waterfalls Avenue, 2194 Mainway Meadows, Waterfalls, Harare",
-  same_day_cutoff_time: "2:00 PM",
-  facebook_url: "https://www.facebook.com/crystalicezim",
-  instagram_url: "https://www.instagram.com/crystalicezim?stkn=MTVkODRobXRpc2hqaw==",
-  twitter_url: "https://x.com/crystalicezim",
-  google_business_url: "https://www.google.com/search?kgmid=%2Fg%2F11q40rdy9f&hl=en-ZW&q=Crystal%20Ice%20Zimbabwe&shem=epsd1%2Cltae%2Crimspwouoe&shndl=30&source=sh%2Fx%2Floc%2Fosrp%2Fm1%2F4&kgs=73ff328e81c3f7ff",
-  hero_headline: "Harare's Trusted Ice Manufacturer & Blast Freezing Facility",
-  hero_subheadline: "Supplying high-purity 2.5kg & 5kg ice cubes, 10kg slow-melt solid ice blocks, and industrial-grade meat blast freezing to local restaurants, bars, butcheries, and events.",
-  hero_badge: "Supplying Harare's Top Restaurants & Butcheries",
-  hero_cta_primary: "Order Ice ($0.75 / 2.5kg)",
-  hero_cta_secondary: "Meat Blast Freezing Rates",
-  hero_bg_image: "/crystal_ice_backdrop.jpg",
-  logo_url: "/crystal_ice_logo.png"
-};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -61,7 +45,7 @@ export default function App() {
   const hasCachedHome = !!localStorage.getItem('crystal_ice_settings');
   const [isLoading, setIsLoading] = useState<boolean>(!hasCachedHome);
 
-  // Core Datasets with local cache to guarantee instant home page caching and permanent image persistence
+  // Core Datasets with fallback to static content to guarantee products never render empty on Cloudflare Pages
   const [settings, setSettings] = useState<WebsiteSettings>(() => {
     try {
       const cached = localStorage.getItem('crystal_ice_settings');
@@ -73,49 +57,67 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const cached = localStorage.getItem('crystal_ice_products');
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return [];
+    return defaultProducts;
   });
 
   const [services, setServices] = useState<Service[]>(() => {
     try {
       const cached = localStorage.getItem('crystal_ice_services');
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return [];
+    return defaultServices;
   });
 
   const [testimonials, setTestimonials] = useState<Testimonial[]>(() => {
     try {
       const cached = localStorage.getItem('crystal_ice_testimonials');
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return [];
+    return defaultTestimonials;
   });
 
   const [faqs, setFaqs] = useState<FAQ[]>(() => {
     try {
       const cached = localStorage.getItem('crystal_ice_faqs');
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return [];
+    return defaultFaqs;
   });
 
   const [deliveryAreas, setDeliveryAreas] = useState<DeliveryArea[]>(() => {
     try {
       const cached = localStorage.getItem('crystal_ice_delivery_areas');
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return [];
+    return defaultDeliveryAreas;
   });
 
   const [statistics, setStatistics] = useState<Statistic[]>(() => {
     try {
       const cached = localStorage.getItem('crystal_ice_statistics');
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return [];
+    return defaultStatistics;
   });
 
   // Modals state
@@ -171,7 +173,7 @@ export default function App() {
   const [isUniversalExportOpen, setIsUniversalExportOpen] = useState<boolean>(false);
   const [activeSlotIdForManager, setActiveSlotIdForManager] = useState<string | undefined>(undefined);
 
-  // Load all public site data from backend API
+  // Load all public site data from backend API with automatic fallback to local dataset
   const fetchAllData = async () => {
     try {
       const [
@@ -184,12 +186,12 @@ export default function App() {
         statisticsRes
       ] = await Promise.all([
         api.getSettings().catch(() => defaultSettings),
-        api.getProducts().catch(() => []),
-        api.getServices().catch(() => []),
-        api.getTestimonials().catch(() => []),
-        api.getFAQs().catch(() => []),
-        api.getDeliveryAreas().catch(() => []),
-        api.getStatistics().catch(() => [])
+        api.getProducts().catch(() => defaultProducts),
+        api.getServices().catch(() => defaultServices),
+        api.getTestimonials().catch(() => defaultTestimonials),
+        api.getFAQs().catch(() => defaultFaqs),
+        api.getDeliveryAreas().catch(() => defaultDeliveryAreas),
+        api.getStatistics().catch(() => defaultStatistics)
       ]);
 
       if (settingsRes) {
@@ -199,29 +201,44 @@ export default function App() {
       if (productsRes && productsRes.length > 0) {
         setProducts([...productsRes]);
         try { localStorage.setItem('crystal_ice_products', JSON.stringify(productsRes)); } catch {}
+      } else {
+        setProducts(defaultProducts);
       }
       if (servicesRes && servicesRes.length > 0) {
         setServices([...servicesRes]);
         try { localStorage.setItem('crystal_ice_services', JSON.stringify(servicesRes)); } catch {}
+      } else {
+        setServices(defaultServices);
       }
       if (testimonialsRes && testimonialsRes.length > 0) {
         setTestimonials([...testimonialsRes]);
         try { localStorage.setItem('crystal_ice_testimonials', JSON.stringify(testimonialsRes)); } catch {}
+      } else {
+        setTestimonials(defaultTestimonials);
       }
       if (faqsRes && faqsRes.length > 0) {
         setFaqs(faqsRes);
         try { localStorage.setItem('crystal_ice_faqs', JSON.stringify(faqsRes)); } catch {}
+      } else {
+        setFaqs(defaultFaqs);
       }
       if (deliveryAreasRes && deliveryAreasRes.length > 0) {
         setDeliveryAreas(deliveryAreasRes);
         try { localStorage.setItem('crystal_ice_delivery_areas', JSON.stringify(deliveryAreasRes)); } catch {}
+      } else {
+        setDeliveryAreas(defaultDeliveryAreas);
       }
       if (statisticsRes && statisticsRes.length > 0) {
         setStatistics(statisticsRes);
         try { localStorage.setItem('crystal_ice_statistics', JSON.stringify(statisticsRes)); } catch {}
+      } else {
+        setStatistics(defaultStatistics);
       }
     } catch (err) {
       console.error('Error fetching Crystal Ice data:', err);
+      // Ensure defaults are populated on any uncaught exception
+      setProducts(prev => (prev && prev.length > 0 ? prev : defaultProducts));
+      setServices(prev => (prev && prev.length > 0 ? prev : defaultServices));
     } finally {
       setIsLoading(false);
     }
@@ -355,7 +372,7 @@ export default function App() {
 
         {activeTab === 'products' && (
           <ProductsView
-            products={products}
+            products={products && products.length > 0 ? products : defaultProducts}
             settings={settings}
             onOpenOrderModal={handleOpenOrderModal}
             onOpenQuoteModal={handleOpenQuoteModal}

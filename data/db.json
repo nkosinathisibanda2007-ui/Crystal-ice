@@ -25,7 +25,7 @@
     "twitter_url": "https://x.com/crystalicezim",
     "google_business_url": "https://www.google.com/search?kgmid=%2Fg%2F11q40rdy9f&hl=en-ZW&q=Crystal%20Ice%20Zimbabwe&shem=epsd1%2Cltae%2Crimspwouoe&shndl=30&source=sh%2Fx%2Floc%2Fosrp%2Fm1%2F4&kgs=73ff328e81c3f7ff",
     "seo_keywords": "Crystal Ice Zimbabwe, ice supplier Harare, ice cubes Zimbabwe, 2.5kg ice bag, 5kg ice bag, 10kg ice block Harare, meat blast freezing Zimbabwe, chicken blast freezing Waterfalls Harare, restaurant ice delivery Harare",
-    "hero_bg_image": "/crystal_ice_backdrop.jpg",
+    "hero_bg_image": "/uploads/test_hero-1791388910575-835054107.png",
     "logo_url": "/crystal_ice_logo.png",
     "bootstrap_complete": true
   },
@@ -679,6 +679,14 @@
   ],
   "media": [
     {
+      "name": "test_hero.png",
+      "url": "/uploads/test_hero-1791388910575-835054107.png",
+      "category": "facilities",
+      "size_kb": 0,
+      "id": "med-1791388910726",
+      "uploaded_at": "2026-10-07"
+    },
+    {
       "name": "ping.png",
       "url": "/uploads/ping-1791285268125-335898360.png",
       "category": "products",
@@ -850,6 +858,26 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "aud-1791388910726-165",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791388910726",
+      "details": "Added media asset: test_hero.png",
+      "timestamp": "2026-10-07T16:01:50.726Z"
+    },
+    {
+      "id": "aud-1791388910724-105",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "hero_backdrop",
+      "details": "Replaced picture in slot \"hero_backdrop\" with \"/uploads/test_hero-1791388910575-835054107.png\".",
+      "timestamp": "2026-10-07T16:01:50.724Z"
+    },
     {
       "id": "aud-1791285268132-622",
       "user_name": "Operations Director",
