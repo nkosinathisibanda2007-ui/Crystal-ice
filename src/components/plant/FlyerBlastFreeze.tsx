@@ -62,7 +62,7 @@ export const FlyerBlastFreeze: React.FC<FlyerBlastFreezeProps> = ({
           <div className="bg-white text-slate-900 rounded-2xl p-4 shadow-md border border-slate-200 flex flex-col justify-between overflow-hidden">
             <div className="h-28 w-full rounded-xl overflow-hidden mb-3 bg-slate-100">
               <img
-                src={photo5ChickenBlastImg}
+                src={settings.custom_images?.['chicken-blast'] || settings.custom_images?.['chicken_blast'] || settings.chicken_blast_image || photo5ChickenBlastImg}
                 alt="Chicken blast freezing at Waterfalls"
                 className="w-full h-full object-cover"
               />
@@ -88,7 +88,7 @@ export const FlyerBlastFreeze: React.FC<FlyerBlastFreezeProps> = ({
           <div className="bg-white text-slate-900 rounded-2xl p-4 shadow-md border border-slate-200 flex flex-col justify-between overflow-hidden">
             <div className="h-28 w-full rounded-xl overflow-hidden mb-3 bg-slate-100">
               <img
-                src={photo6BeefBlastImg}
+                src={settings.custom_images?.['beef-blast'] || settings.custom_images?.['beef_blast'] || settings.beef_blast_image || photo6BeefBlastImg}
                 alt="Beef and meat blast freezing at Waterfalls"
                 className="w-full h-full object-cover"
               />

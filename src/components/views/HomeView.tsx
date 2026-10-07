@@ -184,7 +184,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <div>
                 <div className="aspect-[16/10] w-full overflow-hidden bg-slate-50 relative">
                   <SkeletonImage
-                    src={iceCubesProduct?.image || productIceCubesImg}
+                    src={settings.homepage_ice_cubes_image || settings.ice_cubes_promo_image || settings.custom_images?.['ice-promo'] || settings.custom_images?.['ice_promo'] || settings.custom_images?.['homepage_ice_cubes_card'] || iceCubesProduct?.image || productIceCubesImg}
                     fallbackSrc={productIceCubesImg}
                     alt="Crystal clear food-grade Ice Cubes"
                     priority={true}
@@ -223,7 +223,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <div>
                 <div className="aspect-[16/10] w-full overflow-hidden bg-slate-50 relative">
                   <SkeletonImage
-                    src={iceBlocksProduct?.image || productIceBlocksImg}
+                    src={settings.custom_images?.['ice-blocks-10kg'] || settings.custom_images?.['ice-blocks-freezing'] || settings.ice_blocks_image || iceBlocksProduct?.image || productIceBlocksImg}
                     fallbackSrc={productIceBlocksImg}
                     alt="High-density solid Ice Blocks"
                     priority={true}
@@ -262,7 +262,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <div>
                 <div className="aspect-[16/10] w-full overflow-hidden bg-slate-50 relative">
                   <SkeletonImage
-                    src={products.find(p => p.category.includes('Blast') || p.name.includes('Blast'))?.image || productMeatBlastImg}
+                    src={settings.custom_images?.['chicken-blast'] || settings.custom_images?.['beef-blast'] || settings.cold_storage_image || products.find(p => p.category.includes('Blast') || p.name.includes('Blast'))?.image || productMeatBlastImg}
                     fallbackSrc={productMeatBlastImg}
                     alt="Commercial Meat Blast Freezing Chamber"
                     priority={true}

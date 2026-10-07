@@ -25,9 +25,18 @@
     "twitter_url": "https://x.com/crystalicezim",
     "google_business_url": "https://www.google.com/search?kgmid=%2Fg%2F11q40rdy9f&hl=en-ZW&q=Crystal%20Ice%20Zimbabwe&shem=epsd1%2Cltae%2Crimspwouoe&shndl=30&source=sh%2Fx%2Floc%2Fosrp%2Fm1%2F4&kgs=73ff328e81c3f7ff",
     "seo_keywords": "Crystal Ice Zimbabwe, ice supplier Harare, ice cubes Zimbabwe, 2.5kg ice bag, 5kg ice bag, 10kg ice block Harare, meat blast freezing Zimbabwe, chicken blast freezing Waterfalls Harare, restaurant ice delivery Harare",
-    "hero_bg_image": "/uploads/test_hero-1791388910575-835054107.png",
+    "hero_bg_image": "/crystal_ice_backdrop.jpg",
     "logo_url": "/crystal_ice_logo.png",
-    "bootstrap_complete": true
+    "bootstrap_complete": true,
+    "cold_storage_image": "/uploads/IMG_COM_202610031040189421-1791400957038-759381652.jpeg",
+    "ice_blocks_image": "/uploads/IMG_COM_202610031040189535-1791397195925-210854871.jpeg",
+    "ice_cubes_promo_image": "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg",
+    "custom_images": {
+      "ice-promo": "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg",
+      "ice_promo": "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg"
+    },
+    "homepage_about_image": "/uploads/IMG_COM_202610031040189504__1_-1791400873458-295953650.jpeg",
+    "homepage_ice_cubes_image": "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg"
   },
   "statistics": [
     {
@@ -73,7 +82,7 @@
       "name": "2.5kg Packaged Ice Cubes",
       "slug": "2-5kg-packaged-ice-cubes",
       "description": "Our signature retail and restaurant pack. Crystal-clear, slow-diluting food-grade ice cubes in heavy-duty polyethylene bags with built-in carry handles. $1.00 per bag for orders under 100 packs; special wholesale price of $0.75 per bag for orders of 100 packs minimum with refrigerated delivery across Harare included.",
-      "image": "",
+      "image": "/uploads/IMG_COM_202610031040189504__1_-1791400873458-295953650.jpeg",
       "category": "Packaged Ice Cubes",
       "package_size": "2.5kg Bag with Handle",
       "price": 1,
@@ -103,7 +112,7 @@
       "name": "5kg Commercial Ice Bags",
       "slug": "5kg-commercial-ice-bags",
       "description": "High-volume 5kg ice bags designed specifically for busy restaurant bar wells, high-turnover cocktail stations, corporate catering events, and liquor retailers. Packed tightly with clear, non-clumping ice cubes.",
-      "image": "/packaged_ice_5kg_1790856872454.jpg",
+      "image": "/uploads/IMG_COM_202610031743031500-1791401016893-600287730.jpeg",
       "category": "Packaged Ice Cubes",
       "package_size": "5kg Heavy Duty Bag",
       "price": 1.5,
@@ -164,7 +173,7 @@
       "name": "Chickens Blast Freezing Service",
       "slug": "chickens-blast-freezing",
       "description": "Industrial rapid blast freezing service for poultry farmers, abattoirs, and meat wholesalers. Locks in cellular moisture, prevents freezer burn, and extends shelf life. Minimum batch 1 tonne, capacity up to 10 tonnes per 24 hours.",
-      "image": "/chicken_blast_freeze_1790856846432.jpg",
+      "image": "/uploads/IMG_COM_202610031040189473-1791401069486-652946178.jpeg",
       "category": "Meat Blast Freezing",
       "package_size": "Per Bird (Min 1 Tonne)",
       "price": 0.25,
@@ -195,7 +204,7 @@
       "name": "Beef, Pork & Other Meat Blast Freezing",
       "slug": "beef-pork-meat-blast-freezing",
       "description": "High-capacity blast freezing for beef quarters, carcasses, primal cuts, pork, goat, and processed meat products. Rapid deep chilling preserves meat bloom, prevents microbial proliferation, and ensures export-quality freezing standards.",
-      "image": "/beef_blast_freeze_1790856859754.jpg",
+      "image": "/uploads/IMG_COM_202610031040189566-1791401081338-932160898.jpeg",
       "category": "Meat Blast Freezing",
       "package_size": "Per Kilogram (Min 1 Tonne)",
       "price": 0.2,
@@ -226,7 +235,7 @@
       "name": "Recurring Restaurant Supply Contract",
       "slug": "recurring-restaurant-supply",
       "description": "Custom scheduled ice supply contracts for Harare restaurants, clubs, cafes, and catering venues. Guaranteed morning or afternoon drops, priority route scheduling, and emergency backup stock on busy weekends.",
-      "image": "/ice_cubes_promo_1790856824108.jpg",
+      "image": "/uploads/IMG_COM_202610031743031582-1791401102435-587151614.jpeg",
       "category": "Commercial Contracts",
       "package_size": "Custom Weekly / Daily Volume",
       "price": null,
@@ -283,7 +292,7 @@
         "Fast turn-around time for farmers & wholesalers",
         "Maintains meat texture, natural moisture, and red bloom"
       ],
-      "image": "/crystal_ice_storefront.jpg",
+      "image": "/uploads/IMG_COM_202610031040189421-1791400957038-759381652.jpeg",
       "sort_order": 2,
       "published": true
     },
@@ -679,6 +688,94 @@
   ],
   "media": [
     {
+      "name": "IMG_COM_202610031743031531.jpeg",
+      "url": "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg",
+      "category": "facilities",
+      "size_kb": 362,
+      "id": "med-1791401516553",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031743031531.jpeg",
+      "url": "/uploads/IMG_COM_202610031743031531-1791401372083-177921440.jpeg",
+      "category": "facilities",
+      "size_kb": 362,
+      "id": "med-1791401372140",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031743031531.jpeg",
+      "url": "/uploads/IMG_COM_202610031743031531-1791401151436-718604365.jpeg",
+      "category": "facilities",
+      "size_kb": 362,
+      "id": "med-1791401151496",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031743031582.jpeg",
+      "url": "/uploads/IMG_COM_202610031743031582-1791401102435-587151614.jpeg",
+      "category": "facilities",
+      "size_kb": 390,
+      "id": "med-1791401102504",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031040189566.jpeg",
+      "url": "/uploads/IMG_COM_202610031040189566-1791401081338-932160898.jpeg",
+      "category": "facilities",
+      "size_kb": 31,
+      "id": "med-1791401081367",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031040189473.jpeg",
+      "url": "/uploads/IMG_COM_202610031040189473-1791401069486-652946178.jpeg",
+      "category": "facilities",
+      "size_kb": 31,
+      "id": "med-1791401069515",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031743031500.jpeg",
+      "url": "/uploads/IMG_COM_202610031743031500-1791401016893-600287730.jpeg",
+      "category": "facilities",
+      "size_kb": 354,
+      "id": "med-1791401016984",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031040189421.jpeg",
+      "url": "/uploads/IMG_COM_202610031040189421-1791400957038-759381652.jpeg",
+      "category": "facilities",
+      "size_kb": 44,
+      "id": "med-1791400957077",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031040189504 (1).jpeg",
+      "url": "/uploads/IMG_COM_202610031040189504__1_-1791400873458-295953650.jpeg",
+      "category": "facilities",
+      "size_kb": 32,
+      "id": "med-1791400873496",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031040189535.jpeg",
+      "url": "/uploads/IMG_COM_202610031040189535-1791397195925-210854871.jpeg",
+      "category": "facilities",
+      "size_kb": 34,
+      "id": "med-1791397195964",
+      "uploaded_at": "2026-10-07"
+    },
+    {
+      "name": "IMG_COM_202610031040189535.jpeg",
+      "url": "/uploads/IMG_COM_202610031040189535-1791397154550-453598773.jpeg",
+      "category": "facilities",
+      "size_kb": 34,
+      "id": "med-1791397154754",
+      "uploaded_at": "2026-10-07"
+    },
+    {
       "name": "test_hero.png",
       "url": "/uploads/test_hero-1791388910575-835054107.png",
       "category": "facilities",
@@ -858,6 +955,266 @@
     }
   ],
   "audit_logs": [
+    {
+      "id": "aud-1791401516554-269",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791401516553",
+      "details": "Added media asset: IMG_COM_202610031743031531.jpeg",
+      "timestamp": "2026-10-07T19:31:56.554Z"
+    },
+    {
+      "id": "aud-1791401516552-691",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "custom-ice-promo",
+      "details": "Replaced picture in slot \"custom-ice-promo\" with \"/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg\".",
+      "timestamp": "2026-10-07T19:31:56.552Z"
+    },
+    {
+      "id": "aud-1791401462930-296",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REMOVED",
+      "record_type": "image_slot",
+      "record_id": "custom-ice-promo",
+      "details": "Removed picture from slot \"custom-ice-promo\".",
+      "timestamp": "2026-10-07T19:31:02.930Z"
+    },
+    {
+      "id": "aud-1791401372141-10",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791401372140",
+      "details": "Added media asset: IMG_COM_202610031743031531.jpeg",
+      "timestamp": "2026-10-07T19:29:32.141Z"
+    },
+    {
+      "id": "aud-1791401372139-533",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "custom-ice_promo",
+      "details": "Replaced picture in slot \"custom-ice_promo\" with \"/uploads/IMG_COM_202610031743031531-1791401372083-177921440.jpeg\".",
+      "timestamp": "2026-10-07T19:29:32.139Z"
+    },
+    {
+      "id": "aud-1791401151496-487",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791401151496",
+      "details": "Added media asset: IMG_COM_202610031743031531.jpeg",
+      "timestamp": "2026-10-07T19:25:51.496Z"
+    },
+    {
+      "id": "aud-1791401151495-401",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "custom-ice-promo",
+      "details": "Replaced picture in slot \"custom-ice-promo\" with \"/uploads/IMG_COM_202610031743031531-1791401151436-718604365.jpeg\".",
+      "timestamp": "2026-10-07T19:25:51.495Z"
+    },
+    {
+      "id": "aud-1791401102505-584",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791401102504",
+      "details": "Added media asset: IMG_COM_202610031743031582.jpeg",
+      "timestamp": "2026-10-07T19:25:02.505Z"
+    },
+    {
+      "id": "aud-1791401102503-440",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "product-prod-6",
+      "details": "Replaced picture in slot \"product-prod-6\" with \"/uploads/IMG_COM_202610031743031582-1791401102435-587151614.jpeg\".",
+      "timestamp": "2026-10-07T19:25:02.503Z"
+    },
+    {
+      "id": "aud-1791401081367-144",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791401081367",
+      "details": "Added media asset: IMG_COM_202610031040189566.jpeg",
+      "timestamp": "2026-10-07T19:24:41.367Z"
+    },
+    {
+      "id": "aud-1791401081366-32",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "product-prod-5",
+      "details": "Replaced picture in slot \"product-prod-5\" with \"/uploads/IMG_COM_202610031040189566-1791401081338-932160898.jpeg\".",
+      "timestamp": "2026-10-07T19:24:41.366Z"
+    },
+    {
+      "id": "aud-1791401069516-844",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791401069515",
+      "details": "Added media asset: IMG_COM_202610031040189473.jpeg",
+      "timestamp": "2026-10-07T19:24:29.516Z"
+    },
+    {
+      "id": "aud-1791401069513-421",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "product-prod-4",
+      "details": "Replaced picture in slot \"product-prod-4\" with \"/uploads/IMG_COM_202610031040189473-1791401069486-652946178.jpeg\".",
+      "timestamp": "2026-10-07T19:24:29.513Z"
+    },
+    {
+      "id": "aud-1791401016984-701",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791401016984",
+      "details": "Added media asset: IMG_COM_202610031743031500.jpeg",
+      "timestamp": "2026-10-07T19:23:36.984Z"
+    },
+    {
+      "id": "aud-1791401016983-610",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "product-prod-2",
+      "details": "Replaced picture in slot \"product-prod-2\" with \"/uploads/IMG_COM_202610031743031500-1791401016893-600287730.jpeg\".",
+      "timestamp": "2026-10-07T19:23:36.983Z"
+    },
+    {
+      "id": "aud-1791400957077-439",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791400957077",
+      "details": "Added media asset: IMG_COM_202610031040189421.jpeg",
+      "timestamp": "2026-10-07T19:22:37.077Z"
+    },
+    {
+      "id": "aud-1791400957075-616",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "cold_storage_chamber",
+      "details": "Replaced picture in slot \"cold_storage_chamber\" with \"/uploads/IMG_COM_202610031040189421-1791400957038-759381652.jpeg\".",
+      "timestamp": "2026-10-07T19:22:37.075Z"
+    },
+    {
+      "id": "aud-1791400873497-770",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791400873496",
+      "details": "Added media asset: IMG_COM_202610031040189504 (1).jpeg",
+      "timestamp": "2026-10-07T19:21:13.497Z"
+    },
+    {
+      "id": "aud-1791400873495-30",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "homepage_about_card",
+      "details": "Replaced picture in slot \"homepage_about_card\" with \"/uploads/IMG_COM_202610031040189504__1_-1791400873458-295953650.jpeg\".",
+      "timestamp": "2026-10-07T19:21:13.495Z"
+    },
+    {
+      "id": "aud-1791400817008-342",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REMOVED",
+      "record_type": "image_slot",
+      "record_id": "homepage_about_card",
+      "details": "Removed picture from slot \"homepage_about_card\".",
+      "timestamp": "2026-10-07T19:20:17.008Z"
+    },
+    {
+      "id": "aud-1791400593073-466",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "ice-promo",
+      "details": "Replaced picture in slot \"ice-promo\" with \"/ice_cubes_promo_1790856824108.jpg\".",
+      "timestamp": "2026-10-07T19:16:33.073Z"
+    },
+    {
+      "id": "aud-1791397195964-139",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791397195964",
+      "details": "Added media asset: IMG_COM_202610031040189535.jpeg",
+      "timestamp": "2026-10-07T18:19:55.964Z"
+    },
+    {
+      "id": "aud-1791397195963-473",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "ice_blocks_freezing",
+      "details": "Replaced picture in slot \"ice_blocks_freezing\" with \"/uploads/IMG_COM_202610031040189535-1791397195925-210854871.jpeg\".",
+      "timestamp": "2026-10-07T18:19:55.963Z"
+    },
+    {
+      "id": "aud-1791397154754-609",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "MEDIA_UPLOADED",
+      "record_type": "media",
+      "record_id": "med-1791397154754",
+      "details": "Added media asset: IMG_COM_202610031040189535.jpeg",
+      "timestamp": "2026-10-07T18:19:14.754Z"
+    },
+    {
+      "id": "aud-1791397154753-460",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REPLACED",
+      "record_type": "image_slot",
+      "record_id": "ice_blocks_freezing",
+      "details": "Replaced picture in slot \"ice_blocks_freezing\" with \"/uploads/IMG_COM_202610031040189535-1791397154550-453598773.jpeg\".",
+      "timestamp": "2026-10-07T18:19:14.753Z"
+    },
+    {
+      "id": "aud-1791397107902-47",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "IMAGE_SLOT_REMOVED",
+      "record_type": "image_slot",
+      "record_id": "cold_storage_chamber",
+      "details": "Removed picture from slot \"cold_storage_chamber\".",
+      "timestamp": "2026-10-07T18:18:27.902Z"
+    },
     {
       "id": "aud-1791388910726-165",
       "user_name": "Operations Director",

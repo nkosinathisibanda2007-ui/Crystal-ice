@@ -89,45 +89,55 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
       return matchesCategory && matchesSearch;
     });
-  }, [products, selectedCategory, searchQuery]);
+  }, [activeProducts, selectedCategory, searchQuery]);
 
-  // Exact image resolution per Step 3 instructions:
-  // - 2.5kg photo: second photo (photo2ColdRoomImg)
-  // - 5kg photo: seventh photo (photo7PackagedIce5kgImg)
-  // - 10kg blocks: 8th photo (photo8IceBlocksStorageImg)
-  // - chicken blast freezing: 5th photo (photo5ChickenBlastImg)
-  // - beef and other meat freezing: 6th photo (photo6BeefBlastImg)
+  const getProductFallbackImage = (product: Product) => {
+    const lowerName = product.name.toLowerCase();
+    const lowerSlug = product.slug?.toLowerCase() || '';
+
+    if (lowerName.includes('chicken') || lowerSlug.includes('chicken') || product.id === 'prod-4') {
+      return photo5ChickenBlastImg;
+    }
+    if (lowerName.includes('beef') || lowerName.includes('pork') || lowerSlug.includes('beef') || product.id === 'prod-5') {
+      return photo6BeefBlastImg;
+    }
+    if (lowerName.includes('2.5kg') || lowerSlug.includes('2-5kg') || product.id === 'prod-1') {
+      return photo2ColdRoomImg;
+    }
+    if (lowerName.includes('5kg') || lowerSlug.includes('5kg') || product.id === 'prod-2') {
+      return photo7PackagedIce5kgImg;
+    }
+    if (lowerName.includes('10kg') || lowerSlug.includes('10kg') || product.category.includes('Solid') || product.id === 'prod-3') {
+      return photo8IceBlocksStorageImg;
+    }
+    return photo3IceCubesPromoImg;
+  };
+
   const getProductImage = (product: Product) => {
-    // If an image was uploaded or set for this product, use it immediately
+    const customImgs = settings.custom_images || {};
+    // Check specific custom slots from AuthenticPhotosManager first
+    if (product.id === 'prod-1' && (customImgs['ice-cubes-2-5kg'] || customImgs['ice_cubes_2_5kg'])) {
+      return customImgs['ice-cubes-2-5kg'] || customImgs['ice_cubes_2_5kg'];
+    }
+    if (product.id === 'prod-2' && (customImgs['ice-bags-5kg'] || customImgs['ice_bags_5kg'])) {
+      return customImgs['ice-bags-5kg'] || customImgs['ice_bags_5kg'];
+    }
+    if (product.id === 'prod-3' && (customImgs['ice-blocks-10kg'] || customImgs['ice_blocks_10kg'] || settings.ice_blocks_image)) {
+      return customImgs['ice-blocks-10kg'] || customImgs['ice_blocks_10kg'] || settings.ice_blocks_image;
+    }
+    if (product.id === 'prod-4' && (customImgs['chicken-blast'] || customImgs['chicken_blast'] || settings.chicken_blast_image)) {
+      return customImgs['chicken-blast'] || customImgs['chicken_blast'] || settings.chicken_blast_image;
+    }
+    if (product.id === 'prod-5' && (customImgs['beef-blast'] || customImgs['beef_blast'] || settings.beef_blast_image)) {
+      return customImgs['beef-blast'] || customImgs['beef_blast'] || settings.beef_blast_image;
+    }
+
+    // Direct product.image
     if (product.image && product.image.trim() !== '') {
       return product.image;
     }
 
-    const lowerName = product.name.toLowerCase();
-    const lowerSlug = product.slug?.toLowerCase() || '';
-
-    // Chicken blast freezing -> 5th photo
-    if (lowerName.includes('chicken') || lowerSlug.includes('chicken')) {
-      return photo5ChickenBlastImg;
-    }
-    // Beef, pork & other meat freezing -> 6th photo
-    if (lowerName.includes('beef') || lowerName.includes('pork') || lowerSlug.includes('beef') || (product.category.includes('Blast Freezing') && !lowerName.includes('chicken'))) {
-      return photo6BeefBlastImg;
-    }
-    // 2.5kg ice photo -> 2nd photo
-    if (lowerName.includes('2.5kg') || lowerSlug.includes('2-5kg')) {
-      return photo2ColdRoomImg;
-    }
-    // 5kg ice photo -> 7th photo
-    if (lowerName.includes('5kg') || lowerSlug.includes('5kg')) {
-      return photo7PackagedIce5kgImg;
-    }
-    // 10kg solid ice blocks -> 8th photo
-    if (lowerName.includes('10kg') || lowerSlug.includes('10kg') || product.category.includes('Solid')) {
-      return photo8IceBlocksStorageImg;
-    }
-    // Default fallback
-    return photo3IceCubesPromoImg;
+    return getProductFallbackImage(product);
   };
 
   const cleanWhatsappNumber = settings.whatsapp_number.replace(/[^0-9]/g, '');
@@ -290,7 +300,9 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   <div className="aspect-[16/10] w-full overflow-hidden bg-slate-100 relative">
                     <SkeletonImage
                       src={cardImg}
+                      fallbackSrc={getProductFallbackImage(product)}
                       alt={product.name}
+                      priority={true}
                       containerClassName="w-full h-full"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />

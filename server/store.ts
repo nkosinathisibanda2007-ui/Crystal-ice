@@ -1394,12 +1394,26 @@ export class DatabaseStore {
       targetField: 'hero_bg_image'
     });
 
-    // 2. Homepage About Section Card
+    // 2. Homepage Card 1: Ice Cubes (2.5kg & 5kg) Promo Photo
+    if (!slots.some(s => s.id === 'homepage_ice_cubes_card')) {
+      slots.push({
+        id: 'homepage_ice_cubes_card',
+        title: 'Homepage Card: Ice Cubes (2.5kg & 5kg)',
+        category: 'hero',
+        currentUrl: this.data.settings.homepage_ice_cubes_image || this.data.settings.ice_cubes_promo_image || this.data.settings.custom_images?.['ice-promo'] || '/ice_cubes_promo_1790856824108.jpg',
+        description: 'Centerpiece photo/flyer displayed on the Homepage for "Ice Cubes (2.5kg & 5kg)".',
+        recommendedAspect: '16:10',
+        targetType: 'settings',
+        targetField: 'homepage_ice_cubes_image'
+      });
+    }
+
+    // 3. Homepage About Section Card
     slots.push({
       id: 'homepage_about_card',
       title: 'Homepage About Card Photo ("Clean. Safe. Reliable.")',
       category: 'about',
-      currentUrl: this.data.settings.homepage_about_image || '/src/assets/images/ice_cubes_promo_1790856824108.jpg',
+      currentUrl: this.data.settings.homepage_about_image || '/ice_cubes_promo_1790856824108.jpg',
       description: 'Image displayed inside the homepage "Clean. Safe. Reliable." About card.',
       recommendedAspect: '4:3',
       targetType: 'settings',
@@ -1447,7 +1461,7 @@ export class DatabaseStore {
       id: 'delivery_fleet',
       title: 'Cold-Chain Delivery Fleet & Logistics',
       category: 'facilities',
-      currentUrl: this.data.settings.delivery_fleet_image || '/src/assets/images/service_harare_skyline_1790773229249.jpg',
+      currentUrl: this.data.settings.delivery_fleet_image || '/service_harare_skyline_1790773229249.jpg',
       description: 'Refrigerated delivery trucks and Harare distribution fleet.',
       recommendedAspect: '16:9',
       targetType: 'settings',
@@ -1459,7 +1473,7 @@ export class DatabaseStore {
       id: 'cold_storage_chamber',
       title: 'Cold Storage Room & Blast Freezing Chamber',
       category: 'facilities',
-      currentUrl: this.data.settings.cold_storage_image || '/src/assets/images/cold_room_storage_1790856812685.jpg',
+      currentUrl: this.data.settings.cold_storage_image || '/cold_room_storage_1790856812685.jpg',
       description: 'Sub-zero blast freezing room with industrial cooling fans.',
       recommendedAspect: '16:9',
       targetType: 'settings',
@@ -1471,7 +1485,7 @@ export class DatabaseStore {
       id: 'ice_blocks_freezing',
       title: 'Solid Ice Blocks Freezing Production Room',
       category: 'facilities',
-      currentUrl: this.data.settings.ice_blocks_image || '/src/assets/images/ice_blocks_freezing_1790856836725.jpg',
+      currentUrl: this.data.settings.ice_blocks_image || '/ice_blocks_freezing_1790856836725.jpg',
       description: 'Vertical hanging ice column freezing tanks and block storage.',
       recommendedAspect: '16:9',
       targetType: 'settings',
@@ -1579,19 +1593,46 @@ export class DatabaseStore {
       });
     });
 
-    // 7. Custom Image Slots
+    // 7. Custom Image Slots (only add if not already represented in standard slots)
     if (this.data.settings.custom_images) {
-      Object.entries(this.data.settings.custom_images).forEach(([key, val]) => {
+      const knownIds = new Set(slots.map(s => s.id.toLowerCase()));
+      const reservedKeys = new Set([
+        'ice_promo', 'ice-promo', 'homepage_ice_cubes_card', 'homepage_ice_cubes_image',
+        'homepage_about_card', 'homepage_about_image', 'cold_storage_chamber',
+        'hero_backdrop', 'storefront_main', 'about_facility', 'site_logo',
+        'delivery_fleet', 'ice_blocks_freezing', 'water_purification',
+        'contact_dispatch_facility', 'quality_assurance_lab', 'emergency_backup_power',
+        'chicken_blast', 'beef_blast', 'ice_bags_5kg', 'ice_blocks_10kg'
+      ]);
+
+      Object.entries(this.data.settings.custom_images).forEach(([rawKey, val]) => {
+        if (!val) return;
+        const cleanKey = rawKey.replace(/^custom[-_]+/, '').toLowerCase();
+        if (
+          reservedKeys.has(cleanKey) ||
+          cleanKey.startsWith('product') ||
+          cleanKey.startsWith('service') ||
+          cleanKey.startsWith('portfolio') ||
+          knownIds.has(cleanKey) ||
+          knownIds.has(`custom-${cleanKey}`) ||
+          slots.some(s => s.id.toLowerCase() === cleanKey || s.id.toLowerCase() === `custom-${cleanKey}`)
+        ) {
+          // Already has a slot, don't create duplicate
+          return;
+        }
+
+        const slotId = `custom-${cleanKey}`;
         slots.push({
-          id: `custom-${key}`,
-          title: `Custom Slot: ${key.replace(/_/g, ' ')}`,
+          id: slotId,
+          title: `Custom Slot: ${cleanKey.replace(/_/g, ' ')}`,
           category: 'facilities',
           currentUrl: val,
           description: 'Custom designated image slot on website.',
           recommendedAspect: 'Flexible',
           targetType: 'custom',
-          targetField: key
+          targetField: cleanKey
         });
+        knownIds.add(slotId);
       });
     }
 
@@ -1607,18 +1648,84 @@ export class DatabaseStore {
       this.data.settings.hero_bg_image = newUrl;
     } else if (normalized === 'homepage_about_card' || normalized === 'about_card') {
       this.data.settings.homepage_about_image = newUrl;
-    } else if (normalized === 'storefront_main' || normalized === 'storefront') {
+      const p1 = this.data.products?.find(p => p.id === 'prod-1');
+      if (p1 && !p1.image?.startsWith('/uploads/')) p1.image = newUrl;
+    } else if (normalized === 'storefront_main' || normalized === 'storefront' || normalized === 'photo_1') {
       this.data.settings.storefront_image = newUrl;
+      this.data.settings.about_facility_image = newUrl;
+      if (!this.data.settings.hero_bg_image || this.data.settings.hero_bg_image.includes('storefront')) {
+        this.data.settings.hero_bg_image = newUrl;
+      }
     } else if (normalized === 'about_facility' || normalized === 'about') {
       this.data.settings.about_facility_image = newUrl;
     } else if (normalized === 'site_logo' || normalized === 'logo') {
       this.data.settings.logo_url = newUrl;
     } else if (normalized === 'delivery_fleet' || normalized === 'fleet') {
       this.data.settings.delivery_fleet_image = newUrl;
+    } else if (normalized === 'ice_cubes_2_5kg' || normalized === 'ice_cubes' || normalized === 'photo_2') {
+      // Photo 2: 2.5kg ice cubes & cold room storage
+      this.data.settings.cold_storage_image = newUrl;
+      const p1 = this.data.products?.find(p => p.id === 'prod-1');
+      if (p1) p1.image = newUrl;
+      const s1 = this.data.services?.find(s => s.id === 'serv-1');
+      if (s1) s1.image = newUrl;
+    } else if (
+      normalized === 'homepage_ice_cubes_card' ||
+      normalized === 'homepage_ice_cubes_image' ||
+      normalized === 'ice_promo' ||
+      normalized === 'ice-promo' ||
+      normalized === 'promo' ||
+      normalized === 'photo_3' ||
+      normalized === 'photo-3' ||
+      normalized === 'custom_ice_promo' ||
+      normalized === 'custom_ice-promo' ||
+      slotId === 'custom-ice-promo' ||
+      slotId === 'custom-ice_promo'
+    ) {
+      // Homepage Card 1: Ice Cubes promo flyer / photo
+      this.data.settings.homepage_ice_cubes_image = newUrl;
+      this.data.settings.ice_cubes_promo_image = newUrl;
+      if (!this.data.settings.custom_images) this.data.settings.custom_images = {};
+      this.data.settings.custom_images['ice-promo'] = newUrl;
+      this.data.settings.custom_images['ice_promo'] = newUrl;
+      this.data.settings.custom_images['homepage_ice_cubes_card'] = newUrl;
+      const p1 = this.data.products?.find(p => p.id === 'prod-1');
+      if (p1 && !p1.image?.startsWith('/uploads/')) p1.image = newUrl;
+    } else if (normalized === 'ice_blocks_freezing' || normalized === 'ice_blocks' || normalized === 'photo_4') {
+      // Photo 4: Hanging block freezing facility
+      this.data.settings.ice_blocks_image = newUrl;
+      const p3 = this.data.products?.find(p => p.id === 'prod-3');
+      if (p3) p3.image = newUrl;
+      const s4 = this.data.services?.find(s => s.id === 'serv-4');
+      if (s4) s4.image = newUrl;
+    } else if (normalized === 'chicken_blast' || normalized === 'chicken_blast_freeze' || normalized === 'photo_5') {
+      // Photo 5: Chicken blast freezing
+      this.data.settings.chicken_blast_image = newUrl;
+      const p4 = this.data.products?.find(p => p.id === 'prod-4');
+      if (p4) p4.image = newUrl;
+      const s2 = this.data.services?.find(s => s.id === 'serv-2');
+      if (s2) s2.image = newUrl;
+    } else if (normalized === 'beef_blast' || normalized === 'beef_blast_freeze' || normalized === 'photo_6') {
+      // Photo 6: Beef, pork & other meat blast freezing
+      this.data.settings.beef_blast_image = newUrl;
+      const p5 = this.data.products?.find(p => p.id === 'prod-5');
+      if (p5) p5.image = newUrl;
+    } else if (normalized === 'ice_bags_5kg' || normalized === 'photo_7') {
+      // Photo 7: 5kg commercial packaged ice bags
+      this.data.settings.packaged_ice_5kg_image = newUrl;
+      const p2 = this.data.products?.find(p => p.id === 'prod-2');
+      if (p2) p2.image = newUrl;
+    } else if (normalized === 'ice_blocks_10kg' || normalized === 'photo_8') {
+      // Photo 8: 10kg solid ice blocks storage
+      this.data.settings.ice_blocks_storage_image = newUrl;
+      const p3 = this.data.products?.find(p => p.id === 'prod-3');
+      if (p3) p3.image = newUrl;
     } else if (normalized === 'cold_storage_chamber' || normalized === 'cold_storage') {
       this.data.settings.cold_storage_image = newUrl;
-    } else if (normalized === 'ice_blocks_freezing' || normalized === 'ice_blocks') {
-      this.data.settings.ice_blocks_image = newUrl;
+      const p4 = this.data.products?.find(p => p.id === 'prod-4');
+      if (p4) p4.image = newUrl;
+      const s2 = this.data.services?.find(s => s.id === 'serv-2');
+      if (s2) s2.image = newUrl;
     } else if (normalized === 'water_purification' || normalized === 'purification') {
       this.data.settings.water_purification_image = newUrl;
     } else if (normalized === 'contact_dispatch_facility' || normalized === 'dispatch_facility') {
@@ -1651,11 +1758,15 @@ export class DatabaseStore {
       } else {
         throw new Error(`Portfolio item with ID "${portId}" not found`);
       }
-    } else {
+    }
+
+    if (slotId.startsWith('custom-') || normalized.startsWith('custom_')) {
       if (!this.data.settings.custom_images) {
         this.data.settings.custom_images = {};
       }
       this.data.settings.custom_images[slotId] = newUrl;
+      const clean = slotId.replace(/^custom[-_]+/, '');
+      this.data.settings.custom_images[clean] = newUrl;
     }
 
     this.saveDatabase();
@@ -1675,6 +1786,27 @@ export class DatabaseStore {
       this.data.settings.hero_bg_image = '';
     } else if (normalized === 'homepage_about_card' || normalized === 'about_card') {
       this.data.settings.homepage_about_image = '';
+    } else if (
+      normalized === 'homepage_ice_cubes_card' ||
+      normalized === 'homepage_ice_cubes_image' ||
+      normalized === 'ice_promo' ||
+      normalized === 'ice-promo' ||
+      normalized === 'promo' ||
+      normalized === 'photo_3' ||
+      normalized === 'photo-3' ||
+      normalized === 'custom_ice_promo' ||
+      slotId === 'custom-ice-promo' ||
+      slotId === 'custom-ice_promo'
+    ) {
+      this.data.settings.homepage_ice_cubes_image = '';
+      this.data.settings.ice_cubes_promo_image = '';
+      if (this.data.settings.custom_images) {
+        delete this.data.settings.custom_images['ice-promo'];
+        delete this.data.settings.custom_images['ice_promo'];
+        delete this.data.settings.custom_images['homepage_ice_cubes_card'];
+        delete this.data.settings.custom_images['custom-ice-promo'];
+        delete this.data.settings.custom_images['custom_ice_promo'];
+      }
     } else if (normalized === 'storefront_main' || normalized === 'storefront') {
       this.data.settings.storefront_image = '';
     } else if (normalized === 'about_facility' || normalized === 'about') {

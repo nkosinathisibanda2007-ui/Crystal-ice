@@ -23,18 +23,21 @@ export const SkeletonImage: React.FC<SkeletonImageProps> = ({
   priority = false,
   ...props
 }) => {
-  // If priority is true, image starts in loaded state to eliminate any 1.2s delay
+  // If priority is true, image starts in loaded state to eliminate any delay
   const [isLoaded, setIsLoaded] = useState(() => priority);
   const [hasError, setHasError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState<string | undefined>(src || fallbackSrc);
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
+    setCurrentSrc(src || fallbackSrc);
+    setHasError(false);
     if (priority) {
       setIsLoaded(true);
       return;
     }
 
-    if (!src) {
+    if (!src && !fallbackSrc) {
       setHasError(true);
       return;
     }
@@ -43,14 +46,17 @@ export const SkeletonImage: React.FC<SkeletonImageProps> = ({
     if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
       setIsLoaded(true);
     }
-  }, [src, priority]);
+  }, [src, fallbackSrc, priority]);
 
   const handleLoad = () => {
     setIsLoaded(true);
+    setHasError(false);
   };
 
   const handleError = () => {
-    if (fallbackSrc && src !== fallbackSrc) {
+    if (fallbackSrc && currentSrc !== fallbackSrc) {
+      // Gracefully switch to fallback photo without showing broken icon
+      setCurrentSrc(fallbackSrc);
       setHasError(false);
     } else {
       setHasError(true);
@@ -58,7 +64,7 @@ export const SkeletonImage: React.FC<SkeletonImageProps> = ({
     }
   };
 
-  const imageSrc = hasError && fallbackSrc ? fallbackSrc : src;
+  const imageSrc = currentSrc;
 
   return (
     <div className={`relative overflow-hidden ${containerClassName}`}>

@@ -176,61 +176,45 @@ export default function App() {
   // Load all public site data from backend API with automatic fallback to local dataset
   const fetchAllData = async () => {
     try {
-      const [
-        settingsRes,
-        productsRes,
-        servicesRes,
-        testimonialsRes,
-        faqsRes,
-        deliveryAreasRes,
-        statisticsRes
-      ] = await Promise.all([
-        api.getSettings().catch(() => defaultSettings),
-        api.getProducts().catch(() => defaultProducts),
-        api.getServices().catch(() => defaultServices),
-        api.getTestimonials().catch(() => defaultTestimonials),
-        api.getFAQs().catch(() => defaultFaqs),
-        api.getDeliveryAreas().catch(() => defaultDeliveryAreas),
-        api.getStatistics().catch(() => defaultStatistics)
-      ]);
+      const bootstrap = await api.getBootstrapData(true);
 
-      if (settingsRes) {
-        setSettings({ ...settingsRes });
-        try { localStorage.setItem('crystal_ice_settings', JSON.stringify(settingsRes)); } catch {}
+      if (bootstrap.settings) {
+        setSettings({ ...bootstrap.settings });
+        try { localStorage.setItem('crystal_ice_settings', JSON.stringify(bootstrap.settings)); } catch {}
       }
-      if (productsRes && productsRes.length > 0) {
-        setProducts([...productsRes]);
-        try { localStorage.setItem('crystal_ice_products', JSON.stringify(productsRes)); } catch {}
+      if (bootstrap.products && bootstrap.products.length > 0) {
+        setProducts([...bootstrap.products]);
+        try { localStorage.setItem('crystal_ice_products', JSON.stringify(bootstrap.products)); } catch {}
       } else {
         setProducts(defaultProducts);
       }
-      if (servicesRes && servicesRes.length > 0) {
-        setServices([...servicesRes]);
-        try { localStorage.setItem('crystal_ice_services', JSON.stringify(servicesRes)); } catch {}
+      if (bootstrap.services && bootstrap.services.length > 0) {
+        setServices([...bootstrap.services]);
+        try { localStorage.setItem('crystal_ice_services', JSON.stringify(bootstrap.services)); } catch {}
       } else {
         setServices(defaultServices);
       }
-      if (testimonialsRes && testimonialsRes.length > 0) {
-        setTestimonials([...testimonialsRes]);
-        try { localStorage.setItem('crystal_ice_testimonials', JSON.stringify(testimonialsRes)); } catch {}
+      if (bootstrap.testimonials && bootstrap.testimonials.length > 0) {
+        setTestimonials([...bootstrap.testimonials]);
+        try { localStorage.setItem('crystal_ice_testimonials', JSON.stringify(bootstrap.testimonials)); } catch {}
       } else {
         setTestimonials(defaultTestimonials);
       }
-      if (faqsRes && faqsRes.length > 0) {
-        setFaqs(faqsRes);
-        try { localStorage.setItem('crystal_ice_faqs', JSON.stringify(faqsRes)); } catch {}
+      if (bootstrap.faqs && bootstrap.faqs.length > 0) {
+        setFaqs(bootstrap.faqs);
+        try { localStorage.setItem('crystal_ice_faqs', JSON.stringify(bootstrap.faqs)); } catch {}
       } else {
         setFaqs(defaultFaqs);
       }
-      if (deliveryAreasRes && deliveryAreasRes.length > 0) {
-        setDeliveryAreas(deliveryAreasRes);
-        try { localStorage.setItem('crystal_ice_delivery_areas', JSON.stringify(deliveryAreasRes)); } catch {}
+      if (bootstrap.delivery_areas && bootstrap.delivery_areas.length > 0) {
+        setDeliveryAreas(bootstrap.delivery_areas);
+        try { localStorage.setItem('crystal_ice_delivery_areas', JSON.stringify(bootstrap.delivery_areas)); } catch {}
       } else {
         setDeliveryAreas(defaultDeliveryAreas);
       }
-      if (statisticsRes && statisticsRes.length > 0) {
-        setStatistics(statisticsRes);
-        try { localStorage.setItem('crystal_ice_statistics', JSON.stringify(statisticsRes)); } catch {}
+      if (bootstrap.statistics && bootstrap.statistics.length > 0) {
+        setStatistics(bootstrap.statistics);
+        try { localStorage.setItem('crystal_ice_statistics', JSON.stringify(bootstrap.statistics)); } catch {}
       } else {
         setStatistics(defaultStatistics);
       }
@@ -288,10 +272,15 @@ export default function App() {
       setIsAdminOpen(true);
     }
 
+    const handleSlotUpdated = () => {
+      fetchAllData();
+    };
+
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('hashchange', handlePopState);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('open-crystal-admin', handleCustomAdminOpen);
+    window.addEventListener('crystal-image-slot-updated', handleSlotUpdated);
 
     return () => {
       unsubscribeEvents();
@@ -299,6 +288,7 @@ export default function App() {
       window.removeEventListener('hashchange', handlePopState);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('open-crystal-admin', handleCustomAdminOpen);
+      window.removeEventListener('crystal-image-slot-updated', handleSlotUpdated);
     };
   }, []);
 

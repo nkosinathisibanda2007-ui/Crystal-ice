@@ -47,14 +47,56 @@ export interface BootstrapData {
 
 export const api = {
   // Public Data Retrieval with resilient static fallback for Cloudflare Pages
-  async getBootstrapData(): Promise<BootstrapData> {
+  async getBootstrapData(forceFresh: boolean = false): Promise<BootstrapData> {
     try {
-      const res = await fetch('/api/public/bootstrap');
+      const url = forceFresh ? `/api/public/bootstrap?_t=${Date.now()}` : `/api/public/bootstrap`;
+      const res = await fetch(url, { cache: 'no-cache' });
       if (res.ok) {
         const contentType = res.headers.get('content-type') || '';
         if (contentType.includes('application/json')) {
           const data = await res.json();
           if (data && Array.isArray(data.products) && data.products.length > 0) {
+            // Apply slot overrides from localStorage so changes reflect immediately
+            try {
+              const overrides = JSON.parse(localStorage.getItem('crystal_ice_slot_overrides') || '{}');
+              if (Object.keys(overrides).length > 0) {
+                if (overrides.site_logo || overrides.logo) data.settings.logo_url = overrides.site_logo || overrides.logo;
+                if (overrides.hero_backdrop || overrides.hero) data.settings.hero_bg_image = overrides.hero_backdrop || overrides.hero;
+                if (overrides.storefront_main || overrides.storefront) {
+                  data.settings.storefront_image = overrides.storefront_main || overrides.storefront;
+                  data.settings.about_facility_image = overrides.storefront_main || overrides.storefront;
+                }
+                if (overrides.about_facility) data.settings.about_facility_image = overrides.about_facility;
+                if (overrides.cold_storage_chamber || overrides['ice-cubes-2-5kg']) {
+                  data.settings.cold_storage_image = overrides.cold_storage_chamber || overrides['ice-cubes-2-5kg'];
+                }
+                if (overrides.ice_blocks_freezing || overrides['ice-blocks-10kg']) {
+                  data.settings.ice_blocks_image = overrides.ice_blocks_freezing || overrides['ice-blocks-10kg'];
+                }
+                if (overrides['ice-promo']) {
+                  data.settings.ice_cubes_promo_image = overrides['ice-promo'];
+                }
+
+                data.products = data.products.map((p: Product) => {
+                  if (overrides[`product-${p.id}`]) return { ...p, image: overrides[`product-${p.id}`] };
+                  if (p.id === 'prod-1' && overrides['ice-cubes-2-5kg']) return { ...p, image: overrides['ice-cubes-2-5kg'] };
+                  if (p.id === 'prod-2' && overrides['ice-bags-5kg']) return { ...p, image: overrides['ice-bags-5kg'] };
+                  if (p.id === 'prod-3' && overrides['ice-blocks-10kg']) return { ...p, image: overrides['ice-blocks-10kg'] };
+                  if (p.id === 'prod-4' && overrides['chicken-blast']) return { ...p, image: overrides['chicken-blast'] };
+                  if (p.id === 'prod-5' && overrides['beef-blast']) return { ...p, image: overrides['beef-blast'] };
+                  return p;
+                });
+
+                data.services = data.services.map((s: Service) => {
+                  if (overrides[`service-${s.id}`]) return { ...s, image: overrides[`service-${s.id}`] };
+                  if (s.id === 'serv-1' && overrides['ice-cubes-2-5kg']) return { ...s, image: overrides['ice-cubes-2-5kg'] };
+                  if (s.id === 'serv-2' && overrides['chicken-blast']) return { ...s, image: overrides['chicken-blast'] };
+                  if (s.id === 'serv-3' && overrides['ice-promo']) return { ...s, image: overrides['ice-promo'] };
+                  if (s.id === 'serv-4' && overrides['ice-blocks-freezing']) return { ...s, image: overrides['ice-blocks-freezing'] };
+                  return s;
+                });
+              }
+            } catch {}
             return data;
           }
         }
@@ -911,6 +953,7 @@ export const api = {
       const overrides = JSON.parse(localStorage.getItem('crystal_ice_slot_overrides') || '{}');
       overrides[slotId] = resultUrl;
       localStorage.setItem('crystal_ice_slot_overrides', JSON.stringify(overrides));
+      window.dispatchEvent(new CustomEvent('crystal-image-slot-updated', { detail: { slotId, newUrl: resultUrl } }));
     } catch {}
 
     return {

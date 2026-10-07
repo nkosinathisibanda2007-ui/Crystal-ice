@@ -70,7 +70,8 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   if (req.method === 'GET' && req.path.startsWith('/api/public') && req.path !== '/api/public/events') {
-    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
+    // Dynamic public endpoints must never serve stale cached content when photos change
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   }
   next();
 });
@@ -209,11 +210,63 @@ function syncSlotToDefaultContentFile(slotId: string, newUrl: string) {
       content = content.replace(/hero_bg_image:\s*"[^"]*"/, `hero_bg_image: "${newUrl}"`);
     } else if (normalized === 'site_logo' || normalized === 'logo') {
       content = content.replace(/logo_url:\s*"[^"]*"/, `logo_url: "${newUrl}"`);
+    } else if (normalized === 'storefront_main' || normalized === 'storefront' || normalized === 'about_facility') {
+      content = content.replace(/storefront_image:\s*"[^"]*"/, `storefront_image: "${newUrl}"`);
+    } else if (
+      normalized === 'homepage_ice_cubes_card' ||
+      normalized === 'ice_promo' ||
+      normalized === 'promo' ||
+      normalized === 'photo_3' ||
+      normalized === 'custom_ice_promo' ||
+      slotId === 'custom-ice-promo' ||
+      slotId === 'custom-ice_promo'
+    ) {
+      if (content.includes('homepage_ice_cubes_image:')) {
+        content = content.replace(/homepage_ice_cubes_image:\s*"[^"]*"/, `homepage_ice_cubes_image: "${newUrl}"`);
+      } else {
+        content = content.replace(/hero_cta_secondary:\s*"[^"]*",/, `hero_cta_secondary: "Meat Blast Freezing Rates",\n  homepage_ice_cubes_image: "${newUrl}",`);
+      }
+      if (content.includes('ice_cubes_promo_image:')) {
+        content = content.replace(/ice_cubes_promo_image:\s*"[^"]*"/, `ice_cubes_promo_image: "${newUrl}"`);
+      }
+    } else if (normalized === 'ice_cubes_2_5kg' || normalized === 'photo_2' || slotId === 'product-prod-1' || slotId === 'prod-1') {
+      const prodRegex = /(id:\s*"prod-1"[\s\S]*?image:\s*)"[^"]*"/m;
+      if (prodRegex.test(content)) {
+        content = content.replace(prodRegex, `$1"${newUrl}"`);
+      }
+    } else if (normalized === 'ice_bags_5kg' || normalized === 'photo_7' || slotId === 'product-prod-2' || slotId === 'prod-2') {
+      const prodRegex = /(id:\s*"prod-2"[\s\S]*?image:\s*)"[^"]*"/m;
+      if (prodRegex.test(content)) {
+        content = content.replace(prodRegex, `$1"${newUrl}"`);
+      }
+    } else if (normalized === 'ice_blocks_freezing' || normalized === 'ice_blocks' || normalized === 'ice_blocks_10kg' || normalized === 'photo_4' || normalized === 'photo_8' || slotId === 'product-prod-3' || slotId === 'prod-3') {
+      const prodRegex = /(id:\s*"prod-3"[\s\S]*?image:\s*)"[^"]*"/m;
+      if (prodRegex.test(content)) {
+        content = content.replace(prodRegex, `$1"${newUrl}"`);
+      }
+      content = content.replace(/ice_blocks_image:\s*"[^"]*"/, `ice_blocks_image: "${newUrl}"`);
+    } else if (normalized === 'chicken_blast' || normalized === 'photo_5' || normalized === 'cold_storage_chamber' || normalized === 'cold_storage' || slotId === 'product-prod-4' || slotId === 'prod-4') {
+      const prodRegex = /(id:\s*"prod-4"[\s\S]*?image:\s*)"[^"]*"/m;
+      if (prodRegex.test(content)) {
+        content = content.replace(prodRegex, `$1"${newUrl}"`);
+      }
+      content = content.replace(/cold_storage_image:\s*"[^"]*"/, `cold_storage_image: "${newUrl}"`);
+    } else if (normalized === 'beef_blast' || normalized === 'photo_6' || slotId === 'product-prod-5' || slotId === 'prod-5') {
+      const prodRegex = /(id:\s*"prod-5"[\s\S]*?image:\s*)"[^"]*"/m;
+      if (prodRegex.test(content)) {
+        content = content.replace(prodRegex, `$1"${newUrl}"`);
+      }
     } else if (slotId.startsWith('product-')) {
       const prodId = slotId.replace('product-', '');
       const prodRegex = new RegExp(`(id:\\s*"${prodId}"[\\s\\S]*?image:\\s*)"[^"]*"`, 'm');
       if (prodRegex.test(content)) {
         content = content.replace(prodRegex, `$1"${newUrl}"`);
+      }
+    } else if (slotId.startsWith('service-')) {
+      const srvId = slotId.replace('service-', '');
+      const srvRegex = new RegExp(`(id:\\s*"${srvId}"[\\s\\S]*?image:\\s*)"[^"]*"`, 'm');
+      if (srvRegex.test(content)) {
+        content = content.replace(srvRegex, `$1"${newUrl}"`);
       }
     }
     fs.writeFileSync(defaultContentPath, content, 'utf8');
@@ -272,7 +325,7 @@ dbStore.onContentChange((entity: string) => {
 // PUBLIC API ROUTES
 // ----------------------------------------------------
 
-const PUBLIC_CACHE_CONTROL = 'public, max-age=120, stale-while-revalidate=600';
+const PUBLIC_CACHE_CONTROL = 'no-cache, no-store, must-revalidate';
 
 // Single aggregated payload for instant public hydration
 app.get('/api/public/bootstrap', (_req: Request, res: Response) => {

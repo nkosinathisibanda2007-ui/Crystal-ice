@@ -221,11 +221,17 @@ export interface WebsiteSettings {
   logo_url?: string;
   about_facility_image?: string;
   homepage_about_image?: string;
+  homepage_ice_cubes_image?: string;
   delivery_fleet_image?: string;
   cold_storage_image?: string;
   ice_blocks_image?: string;
   water_purification_image?: string;
   ice_cubes_card_image?: string;
+  ice_cubes_promo_image?: string;
+  chicken_blast_image?: string;
+  beef_blast_image?: string;
+  packaged_ice_5kg_image?: string;
+  ice_blocks_storage_image?: string;
   meat_blast_card_image?: string;
   contact_dispatch_image?: string;
   quality_assurance_image?: string;

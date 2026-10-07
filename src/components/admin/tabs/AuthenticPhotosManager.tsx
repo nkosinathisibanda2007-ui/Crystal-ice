@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Upload,
   Image as ImageIcon,
@@ -41,6 +41,56 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
     settings.logo_url || '/crystal-ice-logo.svg'
   );
 
+  // Dynamic preview map for each slot
+  const [slotPreviews, setSlotPreviews] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {
+      'logo': settings.logo_url || '/crystal-ice-logo.svg',
+      'storefront': settings.storefront_image || settings.about_facility_image || settings.hero_bg_image || '/crystal_ice_storefront.jpg',
+      'ice-cubes-2-5kg': products.find(p => p.id === 'prod-1')?.image || '/cold_room_storage_1790856812685.jpg',
+      'ice-promo': settings.homepage_ice_cubes_image || settings.ice_cubes_promo_image || settings.custom_images?.['ice-promo'] || '/ice_cubes_promo_1790856824108.jpg',
+      'ice-blocks-freezing': settings.ice_blocks_image || '/ice_blocks_freezing_1790856836725.jpg',
+      'chicken-blast': products.find(p => p.id === 'prod-4')?.image || '/chicken_blast_freeze_1790856846432.jpg',
+      'beef-blast': products.find(p => p.id === 'prod-5')?.image || '/beef_blast_freeze_1790856859754.jpg',
+      'ice-bags-5kg': products.find(p => p.id === 'prod-2')?.image || '/packaged_ice_5kg_1790856872454.jpg',
+      'ice-blocks-10kg': products.find(p => p.id === 'prod-3')?.image || '/ice_blocks_storage_1790856885832.jpg',
+    };
+    try {
+      const overrides = JSON.parse(localStorage.getItem('crystal_ice_slot_overrides') || '{}');
+      return { ...initial, ...overrides };
+    } catch {
+      return initial;
+    }
+  });
+
+  // Sync with prop updates
+  useEffect(() => {
+    setSlotPreviews(prev => {
+      const updated = { ...prev };
+      if (settings.logo_url) updated['logo'] = settings.logo_url;
+      if (settings.storefront_image) updated['storefront'] = settings.storefront_image;
+      if (settings.ice_blocks_image) updated['ice-blocks-freezing'] = settings.ice_blocks_image;
+      if (settings.homepage_ice_cubes_image) {
+        updated['ice-promo'] = settings.homepage_ice_cubes_image;
+      } else if (settings.ice_cubes_promo_image) {
+        updated['ice-promo'] = settings.ice_cubes_promo_image;
+      }
+      const p1 = products.find(p => p.id === 'prod-1');
+      if (p1?.image) updated['ice-cubes-2-5kg'] = p1.image;
+      const p2 = products.find(p => p.id === 'prod-2');
+      if (p2?.image) updated['ice-bags-5kg'] = p2.image;
+      const p3 = products.find(p => p.id === 'prod-3');
+      if (p3?.image) updated['ice-blocks-10kg'] = p3.image;
+      const p4 = products.find(p => p.id === 'prod-4');
+      if (p4?.image) updated['chicken-blast'] = p4.image;
+      const p5 = products.find(p => p.id === 'prod-5');
+      if (p5?.image) updated['beef-blast'] = p5.image;
+      return updated;
+    });
+    if (settings.logo_url) {
+      setLogoPreview(settings.logo_url);
+    }
+  }, [settings, products]);
+
   // Define the 8 exact slots
   const photoSlots: PhotoSlot[] = [
     {
@@ -50,7 +100,7 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
       description: 'Used for homepage centerpiece, about page, and contact plant backdrop.',
       defaultPath: settings.hero_bg_image || '/crystal_ice_storefront.jpg',
       targetKey: 'storefront',
-      currentPreview: settings.hero_bg_image || '/crystal_ice_storefront.jpg'
+      currentPreview: slotPreviews['storefront'] || settings.hero_bg_image || '/crystal_ice_storefront.jpg'
     },
     {
       id: 'photo-2',
@@ -59,7 +109,7 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
       description: 'Used on Homepage for Meat Blast Freezing, and Products Page for 2.5kg Ice Cubes.',
       defaultPath: '/cold_room_storage_1790856812685.jpg',
       targetKey: 'ice-cubes-2-5kg',
-      currentPreview: '/cold_room_storage_1790856812685.jpg'
+      currentPreview: slotPreviews['ice-cubes-2-5kg'] || '/cold_room_storage_1790856812685.jpg'
     },
     {
       id: 'photo-3',
@@ -68,7 +118,7 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
       description: 'Used on Homepage for Ice Cubes (2.5 & 5kg) and marketing poster.',
       defaultPath: '/ice_cubes_promo_1790856824108.jpg',
       targetKey: 'ice-promo',
-      currentPreview: '/ice_cubes_promo_1790856824108.jpg'
+      currentPreview: slotPreviews['ice-promo'] || '/ice_cubes_promo_1790856824108.jpg'
     },
     {
       id: 'photo-4',
@@ -77,7 +127,7 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
       description: 'Used on Homepage for Solid Ice Blocks 10kg and block freezing showcase.',
       defaultPath: '/ice_blocks_freezing_1790856836725.jpg',
       targetKey: 'ice-blocks-freezing',
-      currentPreview: '/ice_blocks_freezing_1790856836725.jpg'
+      currentPreview: slotPreviews['ice-blocks-freezing'] || '/ice_blocks_freezing_1790856836725.jpg'
     },
     {
       id: 'photo-5',
@@ -86,7 +136,7 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
       description: 'Used for Chickens Blast Freezing service ($0.25/bird) in products and flyer.',
       defaultPath: '/chicken_blast_freeze_1790856846432.jpg',
       targetKey: 'chicken-blast',
-      currentPreview: '/chicken_blast_freeze_1790856846432.jpg'
+      currentPreview: slotPreviews['chicken-blast'] || '/chicken_blast_freeze_1790856846432.jpg'
     },
     {
       id: 'photo-6',
@@ -95,7 +145,7 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
       description: 'Used for Beef/Pork Blast Freezing service ($0.20/kg) in products and flyer.',
       defaultPath: '/beef_blast_freeze_1790856859754.jpg',
       targetKey: 'beef-blast',
-      currentPreview: '/beef_blast_freeze_1790856859754.jpg'
+      currentPreview: slotPreviews['beef-blast'] || '/beef_blast_freeze_1790856859754.jpg'
     },
     {
       id: 'photo-7',
@@ -104,7 +154,7 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
       description: 'Used for 5kg Commercial Ice Bags on Products and Services page.',
       defaultPath: '/packaged_ice_5kg_1790856872454.jpg',
       targetKey: 'ice-bags-5kg',
-      currentPreview: '/packaged_ice_5kg_1790856872454.jpg'
+      currentPreview: slotPreviews['ice-bags-5kg'] || '/packaged_ice_5kg_1790856872454.jpg'
     },
     {
       id: 'photo-8',
@@ -113,7 +163,7 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
       description: 'Used for 10kg Solid Ice Blocks on Products and Services page.',
       defaultPath: '/ice_blocks_storage_1790856885832.jpg',
       targetKey: 'ice-blocks-10kg',
-      currentPreview: '/ice_blocks_storage_1790856885832.jpg'
+      currentPreview: slotPreviews['ice-blocks-10kg'] || '/ice_blocks_storage_1790856885832.jpg'
     }
   ];
 
@@ -143,11 +193,39 @@ export const AuthenticPhotosManager: React.FC<AuthenticPhotosManagerProps> = ({
       }
 
       const data = await res.json();
+      const newUrl = data.url;
       const kb = data.size_kb || data.sizeKb || Math.round(file.size / 1024);
-      setSuccessMessage(`Successfully uploaded "${file.name}" (${kb} KB) without alteration!`);
+
+      // Immediately update local preview state so there are zero false positives
+      setSlotPreviews(prev => ({ ...prev, [target]: newUrl }));
       if (target === 'logo') {
-        setLogoPreview(data.url);
+        setLogoPreview(newUrl);
       }
+
+      // Save to slot overrides in localStorage so it persists instantly
+      try {
+        const overrides = JSON.parse(localStorage.getItem('crystal_ice_slot_overrides') || '{}');
+        overrides[target] = newUrl;
+        if (target === 'logo') overrides['site_logo'] = newUrl;
+        if (target === 'storefront') {
+          overrides['storefront_main'] = newUrl;
+          overrides['hero_backdrop'] = newUrl;
+        }
+        if (target === 'ice-cubes-2-5kg') overrides['product-prod-1'] = newUrl;
+        if (target === 'ice-bags-5kg') overrides['product-prod-2'] = newUrl;
+        if (target === 'ice-blocks-10kg') overrides['product-prod-3'] = newUrl;
+        if (target === 'chicken-blast') overrides['product-prod-4'] = newUrl;
+        if (target === 'beef-blast') overrides['product-prod-5'] = newUrl;
+        localStorage.setItem('crystal_ice_slot_overrides', JSON.stringify(overrides));
+      } catch {}
+
+      // Fire universal event for live site sync
+      window.dispatchEvent(new CustomEvent('crystal-image-slot-updated', {
+        detail: { slotId: target, newUrl }
+      }));
+
+      setSuccessMessage(`Successfully uploaded "${file.name}" (${kb} KB)! Website image updated live.`);
+
       if (onRefreshData) {
         onRefreshData();
       }

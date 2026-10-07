@@ -97,6 +97,7 @@ export const LiveImageSlotManagerModal: React.FC<LiveImageSlotManagerModalProps>
     try {
       const res = await api.replaceSiteImageSlot(slotId, file);
       setSuccessMessage(`Replaced picture for "${slotId}" with original "${file.name}" (${Math.round(file.size / 1024)} KB)! Live website updated.`);
+      setSlots(prev => prev.map(s => s.id === slotId ? { ...s, currentUrl: res.newUrl } : s));
       await fetchSlots();
       onRefreshSiteData();
     } catch (err: any) {

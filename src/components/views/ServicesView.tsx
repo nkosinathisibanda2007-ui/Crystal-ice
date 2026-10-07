@@ -18,6 +18,7 @@ import { Service, WebsiteSettings } from '../../types/index.ts';
 import { FlyerBlastFreeze } from '../plant/FlyerBlastFreeze.tsx';
 import { PlantColdStorage } from '../plant/PlantColdStorage.tsx';
 import { PlantBlockFreezing } from '../plant/PlantBlockFreezing.tsx';
+import { SkeletonImage } from '../SkeletonImage.tsx';
 
 // Exact user photos in order
 import photo2ColdRoomImg from '../../assets/images/cold_room_storage_1790856812685.jpg';
@@ -60,14 +61,36 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
     ? ((chickenCount * 1.5) / 1000).toFixed(1) // avg 1.5kg dressed bird
     : (beefWeightKg / 1000).toFixed(1);
 
-  // Exact authentic photo per service
-  const getServiceImage = (service: Service) => {
+  const getServiceFallbackImage = (service: Service) => {
     const t = service.title.toLowerCase();
-    if (t.includes('chicken') || t.includes('blast') || t.includes('freezing')) return photo5ChickenBlastImg;
-    if (t.includes('restaurant') || t.includes('daily')) return photo3IceCubesPromoImg;
-    if (t.includes('event') || t.includes('wedding')) return photo7PackagedIce5kgImg;
-    if (t.includes('butcher') || t.includes('block')) return photo8IceBlocksStorageImg;
+    if (t.includes('chicken') || t.includes('blast') || t.includes('freezing') || service.id === 'serv-2') return photo5ChickenBlastImg;
+    if (t.includes('restaurant') || t.includes('daily') || service.id === 'serv-1') return photo3IceCubesPromoImg;
+    if (t.includes('event') || t.includes('wedding') || service.id === 'serv-3') return photo7PackagedIce5kgImg;
+    if (t.includes('butcher') || t.includes('block') || service.id === 'serv-4') return photo8IceBlocksStorageImg;
     return photo2ColdRoomImg;
+  };
+
+  // Exact authentic photo per service with live custom overrides support
+  const getServiceImage = (service: Service) => {
+    const customImgs = settings.custom_images || {};
+    if (service.id === 'serv-1' && (customImgs['ice-cubes-2-5kg'] || customImgs['ice_cubes_2_5kg'])) {
+      return customImgs['ice-cubes-2-5kg'] || customImgs['ice_cubes_2_5kg'];
+    }
+    if (service.id === 'serv-2' && (customImgs['chicken-blast'] || customImgs['chicken_blast'] || settings.chicken_blast_image)) {
+      return customImgs['chicken-blast'] || customImgs['chicken_blast'] || settings.chicken_blast_image;
+    }
+    if (service.id === 'serv-3' && (customImgs['ice-promo'] || settings.ice_cubes_promo_image)) {
+      return customImgs['ice-promo'] || settings.ice_cubes_promo_image;
+    }
+    if (service.id === 'serv-4' && (customImgs['ice-blocks-freezing'] || settings.ice_blocks_image)) {
+      return customImgs['ice-blocks-freezing'] || settings.ice_blocks_image;
+    }
+
+    if (service.image && service.image.trim() !== '') {
+      return service.image;
+    }
+
+    return getServiceFallbackImage(service);
   };
 
   return (
@@ -233,9 +256,12 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
             >
               {/* Authentic Photo */}
               <div className="md:w-72 lg:w-80 h-52 md:h-auto shrink-0 relative bg-slate-900 overflow-hidden">
-                <img
+                <SkeletonImage
                   src={getServiceImage(service)}
+                  fallbackSrc={getServiceFallbackImage(service)}
                   alt={service.title}
+                  priority={true}
+                  containerClassName="w-full h-full min-h-[200px]"
                   className="w-full h-full object-cover"
                 />
               </div>
