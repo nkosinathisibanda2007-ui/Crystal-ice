@@ -27,6 +27,13 @@ export const defaultSettings: WebsiteSettings = {
   hero_bg_image: "/crystal_ice_backdrop.jpg",
   homepage_ice_cubes_image: "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg",
   ice_cubes_promo_image: "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg",
+  cold_storage_image: "/uploads/IMG_COM_202610031040189421-1791400957038-759381652.jpeg",
+  ice_blocks_image: "/uploads/IMG_COM_202610031040189535-1791397195925-210854871.jpeg",
+  homepage_about_image: "/uploads/IMG_COM_202610031040189504__1_-1791400873458-295953650.jpeg",
+  custom_images: {
+    "ice-promo": "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg",
+    "ice_promo": "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg"
+  },
   logo_url: "/crystal_ice_logo.png",
   about_story: "Based in Waterfalls, Harare, Crystal Ice (Pvt) Ltd has grown into one of Zimbabwe's leading ice manufacturing and cold preservation specialists. We combine multi-stage water filtration with heavy-duty freezing chambers to deliver crystal-clear, food-safe ice and industrial meat blast freezing services.",
   about_mission: "To keep Zimbabwe's hospitality, retail, and agricultural cold-chains unbroken with dependable daily ice delivery, hygienic food-grade production, and accessible blast-freezing infrastructure.",
@@ -46,7 +53,7 @@ export const defaultProducts: Product[] = [
     name: "2.5kg Packaged Ice Cubes",
     slug: "2-5kg-packaged-ice-cubes",
     description: "Our signature retail and restaurant pack. Crystal-clear, slow-diluting food-grade ice cubes in heavy-duty polyethylene bags with built-in carry handles. $1.00 per bag for small orders; special wholesale price of $0.75 per bag for orders of 100 packs minimum with refrigerated delivery across Harare included.",
-    image: "/cold_room_storage_1790856812685.jpg",
+    image: "/uploads/IMG_COM_202610031040189504__1_-1791400873458-295953650.jpeg",
     category: "Packaged Ice Cubes",
     package_size: "2.5kg Bag with Handle",
     price: 1.0,
@@ -210,7 +217,7 @@ export const defaultServices: Service[] = [
       "Uninterrupted supply even during peak holiday seasons",
       "Cash on delivery, EcoCash, or monthly account billing"
     ],
-    image: "/cold_room_storage_1790856812685.jpg",
+    image: "/crystal_ice_storefront.jpg",
     sort_order: 1,
     published: true
   },
@@ -227,7 +234,7 @@ export const defaultServices: Service[] = [
       "Fast turn-around time for farmers & wholesalers",
       "Maintains meat texture, natural moisture, and red bloom"
     ],
-    image: "/chicken_blast_freeze_1790856846432.jpg",
+    image: "/uploads/IMG_COM_202610031040189421-1791400957038-759381652.jpeg",
     sort_order: 2,
     published: true
   },

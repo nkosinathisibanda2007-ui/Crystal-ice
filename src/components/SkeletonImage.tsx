@@ -28,10 +28,12 @@ export const SkeletonImage: React.FC<SkeletonImageProps> = ({
   const [hasError, setHasError] = useState(false);
   const [currentSrc, setCurrentSrc] = useState<string | undefined>(src || fallbackSrc);
   const imgRef = useRef<HTMLImageElement>(null);
+  const triedStudioFallback = useRef(false);
 
   useEffect(() => {
     setCurrentSrc(src || fallbackSrc);
     setHasError(false);
+    triedStudioFallback.current = false;
     if (priority) {
       setIsLoaded(true);
       return;
@@ -54,6 +56,19 @@ export const SkeletonImage: React.FC<SkeletonImageProps> = ({
   };
 
   const handleError = () => {
+    // If the image was a relative /uploads/ path and failed on production (Cloudflare),
+    // try loading directly from the live Studio backend before giving up to fallbackSrc
+    if (currentSrc && currentSrc.startsWith('/uploads/') && !triedStudioFallback.current) {
+      triedStudioFallback.current = true;
+      const studioHost = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_STUDIO_URL)
+        ? import.meta.env.VITE_STUDIO_URL
+        : 'https://ais-dev-pkimycadyw7smxbqaxvn2g-664713151287.europe-west2.run.app';
+      const studioUrl = `${studioHost}${currentSrc}`;
+      setCurrentSrc(studioUrl);
+      setHasError(false);
+      return;
+    }
+
     if (fallbackSrc && currentSrc !== fallbackSrc) {
       // Gracefully switch to fallback photo without showing broken icon
       setCurrentSrc(fallbackSrc);

@@ -799,6 +799,21 @@ export class DatabaseStore {
     return (this.data.news_items || []).filter(n => n.published);
   }
 
+  public getPublicBootstrapData() {
+    return {
+      settings: this.getPublicSettings(),
+      statistics: this.getPublicStatistics(),
+      products: this.getPublicProducts(),
+      services: this.getPublicServices(),
+      testimonials: this.getPublicTestimonials(),
+      faqs: this.getPublicFAQs(),
+      delivery_areas: this.getPublicDeliveryAreas(),
+      process_steps: this.getPublicProcessSteps(),
+      portfolio_items: this.getPublicPortfolioItems(),
+      news_items: this.getPublicNewsItems()
+    };
+  }
+
   // PUBLIC SUBMISSION HANDLERS
   public submitOrder(orderData: Omit<Order, 'id' | 'reference_number' | 'status' | 'created_at' | 'updated_at'>): Order {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -1596,26 +1611,23 @@ export class DatabaseStore {
     // 7. Custom Image Slots (only add if not already represented in standard slots)
     if (this.data.settings.custom_images) {
       const knownIds = new Set(slots.map(s => s.id.toLowerCase()));
-      const reservedKeys = new Set([
-        'ice_promo', 'ice-promo', 'homepage_ice_cubes_card', 'homepage_ice_cubes_image',
-        'homepage_about_card', 'homepage_about_image', 'cold_storage_chamber',
-        'hero_backdrop', 'storefront_main', 'about_facility', 'site_logo',
-        'delivery_fleet', 'ice_blocks_freezing', 'water_purification',
-        'contact_dispatch_facility', 'quality_assurance_lab', 'emergency_backup_power',
-        'chicken_blast', 'beef_blast', 'ice_bags_5kg', 'ice_blocks_10kg'
-      ]);
 
       Object.entries(this.data.settings.custom_images).forEach(([rawKey, val]) => {
         if (!val) return;
         const cleanKey = rawKey.replace(/^custom[-_]+/, '').toLowerCase();
+        const slotAlreadyExists = slots.some(
+          s => s.id.toLowerCase() === rawKey.toLowerCase() ||
+               s.id.toLowerCase() === cleanKey ||
+               s.id.toLowerCase() === `custom-${cleanKey}` ||
+               (s.currentUrl === val && (cleanKey.includes('promo') || cleanKey.includes('ice_cubes')))
+        );
         if (
-          reservedKeys.has(cleanKey) ||
+          slotAlreadyExists ||
           cleanKey.startsWith('product') ||
           cleanKey.startsWith('service') ||
           cleanKey.startsWith('portfolio') ||
           knownIds.has(cleanKey) ||
-          knownIds.has(`custom-${cleanKey}`) ||
-          slots.some(s => s.id.toLowerCase() === cleanKey || s.id.toLowerCase() === `custom-${cleanKey}`)
+          knownIds.has(`custom-${cleanKey}`)
         ) {
           // Already has a slot, don't create duplicate
           return;

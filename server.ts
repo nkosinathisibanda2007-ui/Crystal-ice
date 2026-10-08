@@ -19,6 +19,17 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Enable CORS for public endpoints and uploads so live Cloudflare deployments can sync in real-time
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // Serve uploaded original files directly and statically with cache headers
 app.use('/uploads', express.static(uploadsDir, {
   maxAge: '7d',
@@ -63,8 +74,14 @@ const upload = multer({
   }
 });
 
-// Security & Cache Headers Middleware
+// Security, CORS & Cache Headers Middleware
 app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -268,11 +285,84 @@ function syncSlotToDefaultContentFile(slotId: string, newUrl: string) {
       if (srvRegex.test(content)) {
         content = content.replace(srvRegex, `$1"${newUrl}"`);
       }
+    } else if (slotId.startsWith('portfolio-')) {
+      const portId = slotId.replace('portfolio-', '');
+      const portRegex = new RegExp(`(id:\\s*"${portId}"[\\s\\S]*?image_url:\\s*)"[^"]*"`, 'm');
+      if (portRegex.test(content)) {
+        content = content.replace(portRegex, `$1"${newUrl}"`);
+      }
+    } else if (normalized === 'homepage_about_card' || normalized === 'homepage_about_image' || normalized === 'about_card') {
+      if (content.includes('homepage_about_image:')) {
+        content = content.replace(/homepage_about_image:\s*"[^"]*"/, `homepage_about_image: "${newUrl}"`);
+      }
+    } else if (normalized === 'delivery_fleet' || normalized === 'fleet') {
+      if (content.includes('delivery_fleet_image:')) {
+        content = content.replace(/delivery_fleet_image:\s*"[^"]*"/, `delivery_fleet_image: "${newUrl}"`);
+      }
     }
+
+    if (slotId.startsWith('custom-') || normalized.startsWith('custom_')) {
+      const cleanKey = slotId.replace(/^custom[-_]+/, '');
+      const customRegex = new RegExp(`("${cleanKey}"|'${cleanKey}'):\\s*"[^"]*"`, 'g');
+      if (customRegex.test(content)) {
+        content = content.replace(customRegex, `"${cleanKey}": "${newUrl}"`);
+      } else if (content.includes('custom_images: {')) {
+        content = content.replace('custom_images: {', `custom_images: {\n    "${cleanKey}": "${newUrl}",`);
+      }
+    }
+
     fs.writeFileSync(defaultContentPath, content, 'utf8');
     console.log(`[Code Sync] Updated src/data/defaultContent.ts with slot ${slotId} -> ${newUrl}`);
+    // Immediately regenerate static files for Cloudflare Pages production deployment
+    syncAllStaticDataFiles(newUrl.startsWith('/uploads/') ? path.basename(newUrl) : undefined);
   } catch (err) {
     console.warn('[Code Sync] Could not sync slot to defaultContent.ts:', err);
+  }
+}
+
+// Automatically syncs all static JSON endpoints (bootstrap.json, site-images.json, api/public/bootstrap)
+// into public/ and dist/ so Cloudflare Pages edge hosting always has instant up-to-date data & images
+function syncAllStaticDataFiles(newUploadedFile?: string) {
+  try {
+    const publicDir = path.join(process.cwd(), 'public');
+    const distDir = path.join(process.cwd(), 'dist');
+    const uploadsDir = path.join(publicDir, 'uploads');
+    const distUploadsDir = path.join(distDir, 'uploads');
+
+    const bootstrapData = dbStore.getPublicBootstrapData();
+    const bootstrapJson = JSON.stringify(bootstrapData, null, 2);
+
+    fs.mkdirSync(path.join(publicDir, 'api', 'public'), { recursive: true });
+    fs.writeFileSync(path.join(publicDir, 'bootstrap.json'), bootstrapJson, 'utf8');
+    fs.writeFileSync(path.join(publicDir, 'api', 'public', 'bootstrap'), bootstrapJson, 'utf8');
+
+    const slots = dbStore.getAllSiteImageSlots();
+    const slotsJson = JSON.stringify(slots, null, 2);
+    fs.writeFileSync(path.join(publicDir, 'site-images.json'), slotsJson, 'utf8');
+    fs.writeFileSync(path.join(publicDir, 'api', 'public', 'site-images'), slotsJson, 'utf8');
+
+    // Also sync to dist if production build exists
+    if (fs.existsSync(distDir)) {
+      fs.mkdirSync(path.join(distDir, 'api', 'public'), { recursive: true });
+      fs.writeFileSync(path.join(distDir, 'bootstrap.json'), bootstrapJson, 'utf8');
+      fs.writeFileSync(path.join(distDir, 'api', 'public', 'bootstrap'), bootstrapJson, 'utf8');
+      fs.writeFileSync(path.join(distDir, 'site-images.json'), slotsJson, 'utf8');
+      fs.writeFileSync(path.join(distDir, 'api', 'public', 'site-images'), slotsJson, 'utf8');
+
+      if (fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(distUploadsDir, { recursive: true });
+        const allUploads = fs.readdirSync(uploadsDir);
+        for (const file of allUploads) {
+          const src = path.join(uploadsDir, file);
+          const dest = path.join(distUploadsDir, file);
+          if (!fs.existsSync(dest) && fs.statSync(src).isFile()) {
+            try { fs.copyFileSync(src, dest); } catch {}
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Static Sync] Could not generate static data files:', err);
   }
 }
 
@@ -1268,6 +1358,9 @@ app.post('/api/admin/site-images/remove', requireAdminAuth, (req: AuthenticatedR
 // VITE SPA MIDDLEWARE / PRODUCTION SERVING
 // ----------------------------------------------------
 async function startServer() {
+  // Ensure static content files and Cloudflare routing are always synced on server startup
+  syncAllStaticDataFiles();
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

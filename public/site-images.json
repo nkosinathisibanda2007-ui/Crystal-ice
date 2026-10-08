@@ -1,0 +1,286 @@
+[
+  {
+    "id": "hero_backdrop",
+    "title": "Homepage Hero Backdrop Photo",
+    "category": "hero",
+    "currentUrl": "/crystal_ice_backdrop.jpg",
+    "description": "The prominent hero backdrop showcasing the Crystal Ice Zimbabwe packaged ice operations.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "hero_bg_image"
+  },
+  {
+    "id": "homepage_ice_cubes_card",
+    "title": "Homepage Card: Ice Cubes (2.5kg & 5kg)",
+    "category": "hero",
+    "currentUrl": "/uploads/IMG_COM_202610031743031531-1791401516491-320800556.jpeg",
+    "description": "Centerpiece photo/flyer displayed on the Homepage for \"Ice Cubes (2.5kg & 5kg)\".",
+    "recommendedAspect": "16:10",
+    "targetType": "settings",
+    "targetField": "homepage_ice_cubes_image"
+  },
+  {
+    "id": "homepage_about_card",
+    "title": "Homepage About Card Photo (\"Clean. Safe. Reliable.\")",
+    "category": "about",
+    "currentUrl": "/uploads/IMG_COM_202610031040189504__1_-1791400873458-295953650.jpeg",
+    "description": "Image displayed inside the homepage \"Clean. Safe. Reliable.\" About card.",
+    "recommendedAspect": "4:3",
+    "targetType": "settings",
+    "targetField": "homepage_about_image"
+  },
+  {
+    "id": "storefront_main",
+    "title": "Waterfalls Storefront & Plant Facility",
+    "category": "storefront",
+    "currentUrl": "/crystal_ice_storefront.jpg",
+    "description": "Centerpiece building photography featured across the homepage showcase.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "storefront_image"
+  },
+  {
+    "id": "about_facility",
+    "title": "About Us Facility & Plant Operations",
+    "category": "about",
+    "currentUrl": "/crystal_ice_storefront.jpg",
+    "description": "Operational facility photo displayed on the About Us page.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "about_facility_image"
+  },
+  {
+    "id": "site_logo",
+    "title": "Official Crystal Ice Logo",
+    "category": "branding",
+    "currentUrl": "/crystal_ice_logo.png",
+    "description": "Company logo displayed across header, footer, and admin portals.",
+    "recommendedAspect": "Horizontal (2.3:1)",
+    "targetType": "settings",
+    "targetField": "logo_url"
+  },
+  {
+    "id": "delivery_fleet",
+    "title": "Cold-Chain Delivery Fleet & Logistics",
+    "category": "facilities",
+    "currentUrl": "/service_harare_skyline_1790773229249.jpg",
+    "description": "Refrigerated delivery trucks and Harare distribution fleet.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "delivery_fleet_image"
+  },
+  {
+    "id": "cold_storage_chamber",
+    "title": "Cold Storage Room & Blast Freezing Chamber",
+    "category": "facilities",
+    "currentUrl": "/uploads/IMG_COM_202610031040189421-1791400957038-759381652.jpeg",
+    "description": "Sub-zero blast freezing room with industrial cooling fans.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "cold_storage_image"
+  },
+  {
+    "id": "ice_blocks_freezing",
+    "title": "Solid Ice Blocks Freezing Production Room",
+    "category": "facilities",
+    "currentUrl": "/uploads/IMG_COM_202610031040189535-1791397195925-210854871.jpeg",
+    "description": "Vertical hanging ice column freezing tanks and block storage.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "ice_blocks_image"
+  },
+  {
+    "id": "water_purification",
+    "title": "Water Purification & RO Filtration Plant",
+    "category": "facilities",
+    "currentUrl": "",
+    "description": "Food-grade multi-stage reverse osmosis filtration facility.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "water_purification_image"
+  },
+  {
+    "id": "contact_dispatch_facility",
+    "title": "Harare 24/7 Dispatch Desk & Loading Bay",
+    "category": "facilities",
+    "currentUrl": "",
+    "description": "Waterfalls physical customer service desk and loading bay.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "contact_dispatch_image"
+  },
+  {
+    "id": "quality_assurance_lab",
+    "title": "Food-Grade Testing & Purity Verification Lab",
+    "category": "facilities",
+    "currentUrl": "",
+    "description": "Microbial and TDS water purity testing station.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "quality_assurance_image"
+  },
+  {
+    "id": "emergency_backup_power",
+    "title": "Heavy Diesel Generator (Continuous Freezing Power)",
+    "category": "facilities",
+    "currentUrl": "",
+    "description": "Commercial standby generator guaranteeing 24/7 ice manufacturing.",
+    "recommendedAspect": "16:9",
+    "targetType": "settings",
+    "targetField": "generator_image"
+  },
+  {
+    "id": "product-prod-1",
+    "title": "Product: 2.5kg Packaged Ice Cubes",
+    "category": "products",
+    "currentUrl": "/uploads/IMG_COM_202610031040189504__1_-1791400873458-295953650.jpeg",
+    "description": "2.5kg Bag with Handle • Packaged Ice Cubes catalog card picture.",
+    "recommendedAspect": "1:1",
+    "targetType": "product",
+    "targetId": "prod-1",
+    "targetField": "image"
+  },
+  {
+    "id": "product-prod-2",
+    "title": "Product: 5kg Commercial Ice Bags",
+    "category": "products",
+    "currentUrl": "/uploads/IMG_COM_202610031743031500-1791401016893-600287730.jpeg",
+    "description": "5kg Heavy Duty Bag • Packaged Ice Cubes catalog card picture.",
+    "recommendedAspect": "1:1",
+    "targetType": "product",
+    "targetId": "prod-2",
+    "targetField": "image"
+  },
+  {
+    "id": "product-prod-3",
+    "title": "Product: 10kg Solid Ice Blocks",
+    "category": "products",
+    "currentUrl": "/ice_blocks_storage_1790856885832.jpg",
+    "description": "10kg Solid Block • Solid Ice Blocks catalog card picture.",
+    "recommendedAspect": "1:1",
+    "targetType": "product",
+    "targetId": "prod-3",
+    "targetField": "image"
+  },
+  {
+    "id": "product-prod-4",
+    "title": "Product: Chickens Blast Freezing Service",
+    "category": "products",
+    "currentUrl": "/uploads/IMG_COM_202610031040189473-1791401069486-652946178.jpeg",
+    "description": "Per Bird (Min 1 Tonne) • Meat Blast Freezing catalog card picture.",
+    "recommendedAspect": "1:1",
+    "targetType": "product",
+    "targetId": "prod-4",
+    "targetField": "image"
+  },
+  {
+    "id": "product-prod-5",
+    "title": "Product: Beef, Pork & Other Meat Blast Freezing",
+    "category": "products",
+    "currentUrl": "/uploads/IMG_COM_202610031040189566-1791401081338-932160898.jpeg",
+    "description": "Per Kilogram (Min 1 Tonne) • Meat Blast Freezing catalog card picture.",
+    "recommendedAspect": "1:1",
+    "targetType": "product",
+    "targetId": "prod-5",
+    "targetField": "image"
+  },
+  {
+    "id": "product-prod-6",
+    "title": "Product: Recurring Restaurant Supply Contract",
+    "category": "products",
+    "currentUrl": "/uploads/IMG_COM_202610031743031582-1791401102435-587151614.jpeg",
+    "description": "Custom Weekly / Daily Volume • Commercial Contracts catalog card picture.",
+    "recommendedAspect": "1:1",
+    "targetType": "product",
+    "targetId": "prod-6",
+    "targetField": "image"
+  },
+  {
+    "id": "service-serv-1",
+    "title": "Service: Daily & Weekly Restaurant Ice Supply",
+    "category": "services",
+    "currentUrl": "/crystal_ice_storefront.jpg",
+    "description": "Industrial plant service illustration for Daily & Weekly Restaurant Ice Supply.",
+    "recommendedAspect": "16:9",
+    "targetType": "service",
+    "targetId": "serv-1",
+    "targetField": "image"
+  },
+  {
+    "id": "service-serv-2",
+    "title": "Service: Industrial Meat Blast Freezing",
+    "category": "services",
+    "currentUrl": "/uploads/IMG_COM_202610031040189421-1791400957038-759381652.jpeg",
+    "description": "Industrial plant service illustration for Industrial Meat Blast Freezing.",
+    "recommendedAspect": "16:9",
+    "targetType": "service",
+    "targetId": "serv-2",
+    "targetField": "image"
+  },
+  {
+    "id": "service-serv-3",
+    "title": "Service: Events, Weddings & Festival Supply",
+    "category": "services",
+    "currentUrl": "/crystal_ice_storefront.jpg",
+    "description": "Industrial plant service illustration for Events, Weddings & Festival Supply.",
+    "recommendedAspect": "16:9",
+    "targetType": "service",
+    "targetId": "serv-3",
+    "targetField": "image"
+  },
+  {
+    "id": "service-serv-4",
+    "title": "Service: Butcheries & Cold Storage Support",
+    "category": "services",
+    "currentUrl": "/crystal_ice_storefront.jpg",
+    "description": "Industrial plant service illustration for Butcheries & Cold Storage Support.",
+    "recommendedAspect": "16:9",
+    "targetType": "service",
+    "targetId": "serv-4",
+    "targetField": "image"
+  },
+  {
+    "id": "service-serv-5",
+    "title": "Service: Freezer Placement for Retailers",
+    "category": "services",
+    "currentUrl": "/crystal_ice_storefront.jpg",
+    "description": "Industrial plant service illustration for Freezer Placement for Retailers.",
+    "recommendedAspect": "16:9",
+    "targetType": "service",
+    "targetId": "serv-5",
+    "targetField": "image"
+  },
+  {
+    "id": "portfolio-port-1",
+    "title": "Portfolio: The Terrace Bar & Grill, Avondale",
+    "category": "portfolio",
+    "currentUrl": "/crystal_ice_storefront.jpg",
+    "description": "Hospitality & Bars supply client case study photo.",
+    "recommendedAspect": "4:3",
+    "targetType": "portfolio",
+    "targetId": "port-1",
+    "targetField": "image_url"
+  },
+  {
+    "id": "portfolio-port-2",
+    "title": "Portfolio: Zambezi River Commercial Broiler Intake",
+    "category": "portfolio",
+    "currentUrl": "/crystal_ice_storefront.jpg",
+    "description": "Agricultural Blast Freezing supply client case study photo.",
+    "recommendedAspect": "4:3",
+    "targetType": "portfolio",
+    "targetId": "port-2",
+    "targetField": "image_url"
+  },
+  {
+    "id": "portfolio-port-3",
+    "title": "Portfolio: Harare International Food & Music Festival",
+    "category": "portfolio",
+    "currentUrl": "/crystal_ice_storefront.jpg",
+    "description": "Large Events & Catering supply client case study photo.",
+    "recommendedAspect": "4:3",
+    "targetType": "portfolio",
+    "targetId": "port-3",
+    "targetField": "image_url"
+  }
+]
