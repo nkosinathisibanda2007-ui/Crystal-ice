@@ -53,5 +53,9 @@ const headersSrc = path.join(publicDir, '_headers');
 if (fs.existsSync(headersSrc)) {
   fs.copyFileSync(headersSrc, path.join(distDir, '_headers'));
 }
+const assetsIgnoreSrc = path.join(publicDir, '.assetsignore');
+if (fs.existsSync(assetsIgnoreSrc)) {
+  fs.copyFileSync(assetsIgnoreSrc, path.join(distDir, '.assetsignore'));
+}
 
 console.log('[Post-Build Cloudflare] Production distribution prepared for instant deployment to Cloudflare Pages.');
