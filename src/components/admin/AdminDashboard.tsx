@@ -33,9 +33,7 @@ import {
   Bookmark,
   UploadCloud,
   ImageIcon,
-  Share2,
-  Camera,
-  Zap
+  Camera
 } from 'lucide-react';
 import {
   Order,
@@ -57,15 +55,12 @@ import { ProcessPortfolioNewsTab } from './tabs/ProcessPortfolioNewsTab.tsx';
 import { MediaLibraryTab } from './tabs/MediaLibraryTab.tsx';
 import { ExactImageUploadInput } from './ExactImageUploadInput.tsx';
 import { LiveImageSlotManagerModal } from './LiveImageSlotManagerModal.tsx';
-import { UniversalUploaderExportModal } from './UniversalUploaderExportModal.tsx';
-import { UploaderTroubleshooterModal } from './UploaderTroubleshooterModal.tsx';
 
 interface AdminDashboardProps {
   onClose: () => void;
   onRefreshData: () => void;
   settings: WebsiteSettings;
   onOpenLiveImageManager?: (slotId?: string) => void;
-  onOpenUniversalExport?: () => void;
 }
 
 export type AdminTab =
@@ -112,10 +107,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Active Admin Subtab
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('overview');
 
-  // Exact Image Slot Manager & Universal Export States
+  // Exact Image Slot Manager States
   const [isSlotManagerOpen, setIsSlotManagerOpen] = useState(false);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [isTroubleshooterOpen, setIsTroubleshooterOpen] = useState(false);
   const [selectedSlotForManager, setSelectedSlotForManager] = useState<string | undefined>(undefined);
 
   // Data states
@@ -567,17 +560,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         <div className="flex items-center gap-2.5">
           <button
-            id="admin-troubleshoot-uploader-btn"
-            type="button"
-            onClick={() => setIsTroubleshooterOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
-            title="Troubleshoot and diagnose image uploader health"
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>Troubleshoot Uploader</span>
-          </button>
-
-          <button
             id="admin-exact-image-uploader-top-btn"
             type="button"
             onClick={() => {
@@ -589,16 +571,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <UploadCloud className="w-3.5 h-3.5" />
             <span>Exact Image Uploader</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsExportModalOpen(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            title="Export feature link for future applications"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>Export for Future Apps</span>
           </button>
 
           <button
@@ -1712,7 +1684,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {activeAdminTab === 'media' && (
             <MediaLibraryTab
               onOpenLiveSlotManager={() => setIsSlotManagerOpen(true)}
-              onOpenTroubleshooter={() => setIsTroubleshooterOpen(true)}
             />
           )}
 
@@ -1777,26 +1748,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onRefreshData();
         }}
         initialSelectedSlotId={selectedSlotForManager}
-        onOpenUniversalExport={() => {
-          setIsSlotManagerOpen(false);
-          setIsExportModalOpen(true);
-        }}
-      />
-
-      {/* Universal Uploader Export Modal for Future Applications (Step 2) */}
-      <UniversalUploaderExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-      />
-
-      {/* Image Uploader Troubleshooting & Diagnostics Modal */}
-      <UploaderTroubleshooterModal
-        isOpen={isTroubleshooterOpen}
-        onClose={() => setIsTroubleshooterOpen(false)}
-        onRefreshSiteData={() => {
-          loadAdminData();
-          onRefreshData();
-        }}
       />
     </div>
   );

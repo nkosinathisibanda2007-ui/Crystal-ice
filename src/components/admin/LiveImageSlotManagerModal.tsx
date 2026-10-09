@@ -14,9 +14,7 @@ import {
   Eye,
   Sliders,
   Check,
-  Code2,
-  ShieldCheck,
-  Share2
+  ShieldCheck
 } from 'lucide-react';
 import { SiteImageSlot } from '../../types/index.ts';
 import { api } from '../../services/api.ts';
@@ -26,15 +24,13 @@ interface LiveImageSlotManagerModalProps {
   onClose: () => void;
   onRefreshSiteData: () => void;
   initialSelectedSlotId?: string;
-  onOpenUniversalExport?: () => void;
 }
 
 export const LiveImageSlotManagerModal: React.FC<LiveImageSlotManagerModalProps> = ({
   isOpen,
   onClose,
   onRefreshSiteData,
-  initialSelectedSlotId,
-  onOpenUniversalExport
+  initialSelectedSlotId
 }) => {
   const [slots, setSlots] = useState<SiteImageSlot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -171,18 +167,6 @@ export const LiveImageSlotManagerModal: React.FC<LiveImageSlotManagerModalProps>
           </div>
 
           <div className="flex items-center gap-2">
-            {onOpenUniversalExport && (
-              <button
-                type="button"
-                onClick={onOpenUniversalExport}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/30 text-xs font-semibold transition-colors"
-                title="Export this feature to use in future applications"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>Export for Future Apps</span>
-              </button>
-            )}
-
             <button
               onClick={onClose}
               className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
@@ -390,18 +374,6 @@ export const LiveImageSlotManagerModal: React.FC<LiveImageSlotManagerModalProps>
           <div className="flex items-center gap-2 text-slate-500">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Updates sync live instantly to public visitors via Server-Sent Events.</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {onOpenUniversalExport && (
-              <button
-                type="button"
-                onClick={onOpenUniversalExport}
-                className="text-[#0265B5] hover:underline font-bold"
-              >
-                Need this uploader in another app? Click here →
-              </button>
-            )}
           </div>
         </div>
       </div>
