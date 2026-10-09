@@ -295,7 +295,6 @@ const redirectsContent = `# Cloudflare Pages Static & Edge API Routing
 /site-images.json       /site-images.json       200
 /api/public/site-images /site-images.json       200
 /uploads/*              /uploads/:splat         200
-/*                      /index.html             200
 `;
 fs.writeFileSync(path.join(publicDir, '_redirects'), redirectsContent, 'utf8');
 console.log('[Cloudflare Sync] Configured public/_redirects for static Cloudflare Pages');

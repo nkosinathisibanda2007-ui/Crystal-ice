@@ -4,4 +4,3 @@
 /site-images.json       /site-images.json       200
 /api/public/site-images /site-images.json       200
 /uploads/*              /uploads/:splat         200
-/*                      /index.html             200
