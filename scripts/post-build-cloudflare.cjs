@@ -40,7 +40,11 @@ if (fs.existsSync(siteImagesSrc)) {
   fs.copyFileSync(siteImagesSrc, path.join(distDir, 'api', 'public', 'site-images'));
 }
 
-// 3. Ensure _redirects and _headers are in dist
+// 3. Ensure _worker.js, _redirects and _headers are in dist
+const workerSrc = path.join(publicDir, '_worker.js');
+if (fs.existsSync(workerSrc)) {
+  fs.copyFileSync(workerSrc, path.join(distDir, '_worker.js'));
+}
 const redirectsSrc = path.join(publicDir, '_redirects');
 if (fs.existsSync(redirectsSrc)) {
   fs.copyFileSync(redirectsSrc, path.join(distDir, '_redirects'));

@@ -163,12 +163,13 @@ export class DatabaseStore {
 
     // Default initialization with first admin account
     const initialSalt = crypto.randomBytes(16).toString('hex');
+    const defaultPassword = process.env.ADMIN_PASSWORD || 'iceadmin2026';
     const initialAdminUser: StoredAdminUser = {
       id: 'usr-admin-1',
       email: 'admin@crystalice.co.zw',
       name: 'Operations Director',
       active: true,
-      passwordHash: hashPassword('ArcticPure2025!', initialSalt),
+      passwordHash: hashPassword(defaultPassword, initialSalt),
       salt: initialSalt,
       created_at: new Date().toISOString()
     };
@@ -231,12 +232,13 @@ export class DatabaseStore {
 
     if (!data.admin_users || !Array.isArray(data.admin_users) || data.admin_users.length === 0) {
       const initialSalt = crypto.randomBytes(16).toString('hex');
+      const defaultPassword = process.env.ADMIN_PASSWORD || 'iceadmin2026';
       const initialAdminUser: StoredAdminUser = {
         id: 'usr-admin-1',
         email: 'admin@crystalice.co.zw',
         name: 'Operations Director',
         active: true,
-        passwordHash: hashPassword('iceadmin2026', initialSalt),
+        passwordHash: hashPassword(defaultPassword, initialSalt),
         salt: initialSalt,
         created_at: new Date().toISOString()
       };
@@ -601,9 +603,9 @@ export class DatabaseStore {
 
     const hash = hashPassword(passwordPlain, user.salt);
     const isPrimaryMatch = (hash === user.passwordHash);
-    const isConvenienceMatch = (passwordPlain === 'iceadmin2026' || passwordPlain === 'ArcticPure2025!');
+    const isEnvMatch = !!process.env.ADMIN_PASSWORD && passwordPlain === process.env.ADMIN_PASSWORD;
 
-    if (!isPrimaryMatch && !isConvenienceMatch) {
+    if (!isPrimaryMatch && !isEnvMatch) {
       this.addAuditLog(user.name, this.getUserRole(user.id), 'LOGIN_FAILED', 'auth', `Incorrect password for: ${user.email}`);
       return null;
     }

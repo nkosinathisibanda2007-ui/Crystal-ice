@@ -956,6 +956,24 @@
   ],
   "audit_logs": [
     {
+      "id": "aud-1791570385900-758",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "LOGIN_FAILED",
+      "record_type": "auth",
+      "details": "Incorrect password for: admin@crystalice.co.zw",
+      "timestamp": "2026-10-09T18:26:25.900Z"
+    },
+    {
+      "id": "aud-1791570382225-904",
+      "user_name": "Operations Director",
+      "user_role": "admin",
+      "action": "LOGIN_SUCCESS",
+      "record_type": "auth",
+      "details": "Staff logged in: admin@crystalice.co.zw (admin)",
+      "timestamp": "2026-10-09T18:26:22.225Z"
+    },
+    {
       "id": "aud-1791401516554-269",
       "user_name": "Operations Director",
       "user_role": "admin",
@@ -1656,6 +1674,12 @@
       "userId": "usr-admin-1",
       "createdAt": "2026-10-06T11:14:28.082Z",
       "expiresAt": "2026-10-13T11:14:28.082Z"
+    },
+    {
+      "token": "d31151c1242758807632f7f8c9ba563b8d2cdcb64327c36d877f11dc80e043f6",
+      "userId": "usr-admin-1",
+      "createdAt": "2026-10-09T18:26:22.224Z",
+      "expiresAt": "2026-10-16T18:26:22.224Z"
     }
   ],
   "user_roles": [

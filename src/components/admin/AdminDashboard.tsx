@@ -104,8 +104,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isBootstrapping, setIsBootstrapping] = useState(false);
 
   // Login form state
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('iceadmin2026');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
@@ -466,6 +466,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   id="admin-username-input"
                   type="text"
                   required
+                  autoComplete="username"
+                  placeholder="admin or admin@crystalice.co.zw"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full p-2.5 text-xs bg-slate-50 rounded-xl border border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
@@ -480,56 +482,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   id="admin-password-input"
                   type="password"
                   required
+                  autoComplete="current-password"
+                  placeholder="Enter administrator password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full p-2.5 text-xs bg-slate-50 rounded-xl border border-slate-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
-              {/* Quick Login & Credentials Info */}
-              <div className="p-3 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl border border-cyan-200 text-xs text-cyan-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div>
-                  <div className="font-semibold text-slate-800">Direct Admin Access</div>
-                  <div className="text-[11px] text-slate-600 font-mono mt-0.5">
-                    User: <strong>admin</strong> • Pass: <strong>iceadmin2026</strong>
-                  </div>
-                </div>
-                <button
-                  id="admin-one-click-login-btn"
-                  type="button"
-                  onClick={async () => {
-                    setUsername('admin');
-                    setPassword('iceadmin2026');
-                    setLoginError('');
-                    setIsLoggingIn(true);
-                    try {
-                      const res = await api.adminLogin('admin', 'iceadmin2026');
-                      setToken(res.token);
-                      setUser(res.user);
-                      onRefreshData();
-                    } catch (err: any) {
-                      setLoginError(err.message || 'Quick login failed');
-                    } finally {
-                      setIsLoggingIn(false);
-                    }
-                  }}
-                  disabled={isLoggingIn}
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#0265B5] hover:bg-[#005599] text-white font-bold rounded-lg text-xs shadow-xs transition-transform active:scale-95 cursor-pointer disabled:opacity-50 shrink-0"
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>{isLoggingIn ? 'Logging in...' : '1-Click Instant Login'}</span>
-                </button>
-              </div>
-
-              <div className="pt-1 flex items-center gap-2">
+              <div className="pt-2 flex items-center gap-2">
                 <button
                   id="admin-login-submit"
                   type="submit"
                   disabled={isLoggingIn}
-                  className="flex-1 py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-1 py-3 px-4 bg-[#0265B5] hover:bg-[#004e8c] text-white font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   <Lock className="w-4 h-4" />
-                  <span>{isLoggingIn ? 'Verifying...' : 'Sign In with Credentials'}</span>
+                  <span>{isLoggingIn ? 'Verifying...' : 'Sign In to Admin Portal'}</span>
                 </button>
 
                 <button

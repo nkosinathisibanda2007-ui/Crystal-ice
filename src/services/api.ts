@@ -48,6 +48,17 @@ export interface BootstrapData {
   news_items: NewsItem[];
 }
 
+// Helper to safely parse JSON without throwing 'Unexpected end of JSON input'
+async function safeJsonParse(res: Response): Promise<any> {
+  try {
+    const text = await res.text();
+    if (!text || !text.trim()) return null;
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 export const api = {
   // Public Data Retrieval with resilient static fallback for Cloudflare Pages
   async getBootstrapData(forceFresh: boolean = false): Promise<BootstrapData> {
@@ -301,32 +312,56 @@ export const api = {
 
   // Bootstrap Check & Execution
   async getBootstrapStatus(): Promise<{ bootstrap_available: boolean; locked: boolean }> {
-    const res = await fetch('/api/admin/bootstrap/status');
-    if (!res.ok) throw new Error('Failed to verify bootstrap status');
-    return res.json();
+    try {
+      const res = await fetch('/api/admin/bootstrap/status');
+      if (!res.ok) return { bootstrap_available: false, locked: true };
+      const data = await safeJsonParse(res);
+      return data || { bootstrap_available: false, locked: true };
+    } catch {
+      return { bootstrap_available: false, locked: true };
+    }
   },
 
   async bootstrapFirstAdmin(payload: { email: string; name: string; password: string }): Promise<{ user: AdminUser; token: string }> {
-    const res = await fetch('/api/admin/bootstrap', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Bootstrap failed');
+    let res: Response;
+    try {
+      res = await fetch('/api/admin/bootstrap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (networkErr: any) {
+      throw new Error('Unable to connect to the authentication server.');
+    }
+    const data = await safeJsonParse(res);
+    if (!res.ok) throw new Error(data?.error || `Bootstrap failed with status ${res.status}`);
+    if (!data || !data.token) throw new Error('Bootstrap response was invalid.');
     localStorage.setItem(TOKEN_KEY, data.token);
     localStorage.setItem(USER_KEY, JSON.stringify(data.user));
     return data;
   },
 
   async login(email: string, password: string): Promise<{ user: AdminUser; token: string }> {
-    const res = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Authentication failed');
+    let res: Response;
+    try {
+      res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+    } catch (networkErr: any) {
+      throw new Error('Unable to connect to the authentication server. Please check your network connection.');
+    }
+
+    const data = await safeJsonParse(res);
+    if (!res.ok) {
+      const errorMsg = data?.error || (res.status === 401 ? 'Invalid username or password' : res.status === 429 ? 'Too many failed login attempts. Please wait 1 minute.' : `Authentication failed (${res.status})`);
+      throw new Error(errorMsg);
+    }
+
+    if (!data || !data.token) {
+      throw new Error('Authentication response was invalid.');
+    }
 
     localStorage.setItem(TOKEN_KEY, data.token);
     localStorage.setItem(USER_KEY, JSON.stringify(data.user));
@@ -349,9 +384,12 @@ export const api = {
         await this.logout();
         return null;
       }
-      const data = await res.json();
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-      return data.user;
+      const data = await safeJsonParse(res);
+      if (data?.user) {
+        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+        return data.user;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -390,21 +428,26 @@ export const api = {
       ...options.headers
     };
 
-    const res = await fetch(endpoint, {
-      ...options,
-      headers
-    });
+    let res: Response;
+    try {
+      res = await fetch(endpoint, {
+        ...options,
+        headers
+      });
+    } catch (networkErr: any) {
+      throw new Error('Network error. Unable to reach the administration server.');
+    }
 
     if (res.status === 401) {
       await this.logout();
       throw new Error('Session expired. Please log in again.');
     }
 
-    const data = await res.json();
+    const data = await safeJsonParse(res);
     if (!res.ok) {
-      throw new Error(data.error || 'Operation failed');
+      throw new Error(data?.error || `Request failed (${res.status})`);
     }
-    return data;
+    return (data || {}) as T;
   },
 
   // Admin Overview
