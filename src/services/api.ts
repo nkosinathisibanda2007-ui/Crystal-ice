@@ -425,12 +425,23 @@ export const api = {
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
       ...options.headers
     };
 
+    // Cache-bust GET requests with timestamp query param to guarantee fresh network retrieval
+    let targetEndpoint = endpoint;
+    const reqMethod = (options.method || 'GET').toUpperCase();
+    if (reqMethod === 'GET') {
+      const sep = targetEndpoint.includes('?') ? '&' : '?';
+      targetEndpoint = `${targetEndpoint}${sep}_t=${Date.now()}`;
+    }
+
     let res: Response;
     try {
-      res = await fetch(endpoint, {
+      res = await fetch(targetEndpoint, {
+        cache: 'no-store',
         ...options,
         headers
       });
@@ -498,10 +509,29 @@ export const api = {
   },
 
   async updateOrderStatus(id: string, status: Order['status'], internalNotes?: string): Promise<Order> {
-    return this.adminRequest(`/api/admin/orders/${id}/status`, {
+    const res: any = await this.adminRequest(`/api/admin/orders/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status, internal_notes: internalNotes })
     });
+    return res?.order || res;
+  },
+
+  async archiveOrder(id: string): Promise<Order> {
+    const res: any = await this.adminRequest(`/api/admin/orders/${id}`, {
+      method: 'DELETE'
+    });
+    return res?.order || res;
+  },
+
+  async restoreOrder(id: string): Promise<Order> {
+    const res: any = await this.adminRequest(`/api/admin/orders/${id}/restore`, {
+      method: 'POST'
+    });
+    return res?.order || res;
+  },
+
+  async deleteOrder(id: string): Promise<Order> {
+    return this.archiveOrder(id);
   },
 
   // Admin Quotes

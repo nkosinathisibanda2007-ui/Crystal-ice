@@ -1,4 +1,10 @@
 export type OrderStatus =
+  | 'Pending Review'
+  | 'In Review'
+  | 'Quoted'
+  | 'Accepted'
+  | 'Rejected'
+  | 'Archived'
   | 'New'
   | 'Contacted'
   | 'Confirmed'
@@ -6,7 +12,12 @@ export type OrderStatus =
   | 'Ready'
   | 'Out for Delivery'
   | 'Completed'
-  | 'Cancelled';
+  | 'Cancelled'
+  | 'pending'
+  | 'confirmed'
+  | 'out_for_delivery'
+  | 'delivered'
+  | 'cancelled';
 
 export type QuoteStatus =
   | 'Pending Review'

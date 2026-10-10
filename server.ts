@@ -790,6 +790,22 @@ app.patch('/api/admin/orders/:id/status', requireAdminAuth, requirePermission('m
   res.json(updated);
 });
 
+app.delete('/api/admin/orders/:id', requireAdminAuth, requirePermission('manage_orders'), (req: AuthenticatedRequest, res: Response) => {
+  const archived = dbStore.archiveOrder(req.params.id, req.adminUser!);
+  if (!archived) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  res.json({ success: true, order: archived, message: 'Order archived to records.' });
+});
+
+app.post('/api/admin/orders/:id/restore', requireAdminAuth, requirePermission('manage_orders'), (req: AuthenticatedRequest, res: Response) => {
+  const restored = dbStore.restoreOrder(req.params.id, req.adminUser!);
+  if (!restored) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  res.json({ success: true, order: restored, message: 'Order restored to active queue.' });
+});
+
 // Quotes
 app.get('/api/admin/quotes', requireAdminAuth, requirePermission('view_orders'), (req: AuthenticatedRequest, res: Response) => {
   res.json(dbStore.getAllQuotesAdmin());

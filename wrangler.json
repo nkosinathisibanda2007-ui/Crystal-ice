@@ -8,5 +8,11 @@
     "binding": "ASSETS",
     "run_worker_first": true,
     "not_found_handling": "single-page-application"
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "CRYSTAL_ICE_KV",
+      "id": "25b347967f3e4e528028f954088fcf29"
+    }
+  ]
 }

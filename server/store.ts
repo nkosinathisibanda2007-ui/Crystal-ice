@@ -1011,6 +1011,50 @@ export class DatabaseStore {
     return order;
   }
 
+  public archiveOrder(id: string, adminUser: AdminUser): Order | null {
+    if (!this.hasPermission(adminUser.id, 'manage_orders')) {
+      throw new Error('Permission denied: manage_orders required.');
+    }
+    const order = this.data.orders.find(o => o.id === id);
+    if (!order) return null;
+    order.status = 'Archived' as any;
+    order.updated_at = new Date().toISOString();
+    this.saveDatabase();
+
+    this.addAuditLog(
+      adminUser.name,
+      adminUser.role,
+      'ORDER_ARCHIVED',
+      'order',
+      `Order ${order.reference_number} archived to historical records.`,
+      order.id
+    );
+    this.broadcastChange('orders');
+    return order;
+  }
+
+  public restoreOrder(id: string, adminUser: AdminUser): Order | null {
+    if (!this.hasPermission(adminUser.id, 'manage_orders')) {
+      throw new Error('Permission denied: manage_orders required.');
+    }
+    const order = this.data.orders.find(o => o.id === id);
+    if (!order) return null;
+    order.status = 'Pending Review' as any;
+    order.updated_at = new Date().toISOString();
+    this.saveDatabase();
+
+    this.addAuditLog(
+      adminUser.name,
+      adminUser.role,
+      'ORDER_RESTORED',
+      'order',
+      `Order ${order.reference_number} restored to active queue.`,
+      order.id
+    );
+    this.broadcastChange('orders');
+    return order;
+  }
+
   // Quotes Admin
   public getAllQuotesAdmin(): QuoteRequest[] {
     return this.data.quote_requests;

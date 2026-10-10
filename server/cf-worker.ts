@@ -3,6 +3,53 @@ import initialDb from '../data/db.json';
 // In-memory data store for Edge runtime
 const db = JSON.parse(JSON.stringify(initialDb));
 
+// Cloudflare KV persistence sync helper
+async function syncDatabaseFromKV(env: any) {
+  if (!env || !env.CRYSTAL_ICE_KV) return;
+  try {
+    const raw = await env.CRYSTAL_ICE_KV.get('db_state_v1');
+    if (raw) {
+      const persisted = JSON.parse(raw);
+      if (persisted && typeof persisted === 'object') {
+        if (Array.isArray(persisted.quotes)) db.quotes = persisted.quotes;
+        if (Array.isArray(persisted.orders)) db.orders = persisted.orders;
+        if (Array.isArray(persisted.contacts)) db.contacts = persisted.contacts;
+        if (Array.isArray(persisted.products)) db.products = persisted.products;
+        if (Array.isArray(persisted.services)) db.services = persisted.services;
+        if (persisted.settings) db.settings = { ...db.settings, ...persisted.settings };
+        if (Array.isArray(persisted.delivery_areas)) db.delivery_areas = persisted.delivery_areas;
+        if (Array.isArray(persisted.media)) db.media = persisted.media;
+      }
+    }
+  } catch (err) {
+    console.error('KV sync load failed:', err);
+  }
+}
+
+async function persistDatabaseToKV(env: any, ctx?: any) {
+  if (!env || !env.CRYSTAL_ICE_KV) return;
+  try {
+    const stateToSave = {
+      quotes: db.quotes || [],
+      orders: db.orders || [],
+      contacts: db.contacts || [],
+      products: db.products || [],
+      services: db.services || [],
+      settings: db.settings || {},
+      delivery_areas: db.delivery_areas || [],
+      media: db.media || []
+    };
+    const promise = env.CRYSTAL_ICE_KV.put('db_state_v1', JSON.stringify(stateToSave));
+    if (ctx && typeof ctx.waitUntil === 'function') {
+      ctx.waitUntil(promise);
+    } else {
+      await promise;
+    }
+  } catch (err) {
+    console.error('KV sync persist failed:', err);
+  }
+}
+
 // In-memory uploaded files: path/name -> { buffer: Uint8Array, contentType: string }
 const edgeUploadedFiles = new Map<string, { buffer: Uint8Array; contentType: string }>();
 
@@ -46,6 +93,9 @@ function jsonResponse(data: any, status = 200, headers: Record<string, string> =
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
       ...headers
     }
   });
@@ -206,6 +256,9 @@ export default {
       return new Response('Not found', { status: 404 });
     }
 
+    // Always synchronize latest state from Cloudflare KV before handling API requests
+    await syncDatabaseFromKV(env);
+
     // Optional proxy to live Google AI Studio backend if configured
     if (env && env.BACKEND_URL) {
       try {
@@ -365,16 +418,40 @@ export default {
         if (method === 'GET') return jsonResponse(db.orders || []);
       }
 
-      if (pathname.startsWith('/api/admin/orders/') && method === 'PATCH') {
-        const id = pathname.replace('/api/admin/orders/', '');
+      if (pathname.startsWith('/api/admin/orders/')) {
+        let subpath = pathname.replace('/api/admin/orders/', '');
+        const isStatus = subpath.endsWith('/status');
+        const isRestore = subpath.endsWith('/restore');
+        if (isStatus) subpath = subpath.replace(/\/status$/, '');
+        if (isRestore) subpath = subpath.replace(/\/restore$/, '');
+        const id = decodeURIComponent(subpath);
+
         const order = (db.orders || []).find((o: any) => o.id === id);
         if (!order) return jsonResponse({ error: 'Order not found' }, 404);
-        try {
-          const updates = await request.json();
-          Object.assign(order, updates, { updated_at: new Date().toISOString() });
-          return jsonResponse({ success: true, order });
-        } catch {
-          return jsonResponse({ error: 'Invalid JSON' }, 400);
+
+        if (method === 'PATCH' || (method === 'POST' && isStatus)) {
+          try {
+            const updates = await request.json();
+            Object.assign(order, updates, { updated_at: new Date().toISOString() });
+            persistDatabaseToKV(env, ctx);
+            return jsonResponse({ success: true, order });
+          } catch {
+            return jsonResponse({ error: 'Invalid JSON' }, 400);
+          }
+        }
+
+        if (method === 'DELETE') {
+          order.status = 'Archived';
+          order.updated_at = new Date().toISOString();
+          persistDatabaseToKV(env, ctx);
+          return jsonResponse({ success: true, order, message: 'Order archived to records.' });
+        }
+
+        if (method === 'POST' && isRestore) {
+          order.status = 'Pending Review';
+          order.updated_at = new Date().toISOString();
+          persistDatabaseToKV(env, ctx);
+          return jsonResponse({ success: true, order, message: 'Order restored to active.' });
         }
       }
 
@@ -397,6 +474,7 @@ export default {
           try {
             const updates = await request.json();
             Object.assign(quote, updates, { updated_at: new Date().toISOString() });
+            persistDatabaseToKV(env, ctx);
             return jsonResponse({ success: true, quote });
           } catch {
             return jsonResponse({ error: 'Invalid JSON' }, 400);
@@ -406,12 +484,14 @@ export default {
         if (method === 'DELETE') {
           quote.status = 'Archived';
           quote.updated_at = new Date().toISOString();
+          persistDatabaseToKV(env, ctx);
           return jsonResponse({ success: true, quote, message: 'Quote archived to records.' });
         }
 
         if (method === 'POST' && isRestore) {
           quote.status = 'Pending Review';
           quote.updated_at = new Date().toISOString();
+          persistDatabaseToKV(env, ctx);
           return jsonResponse({ success: true, quote, message: 'Quote restored to active.' });
         }
       }
@@ -1065,6 +1145,7 @@ export default {
         };
         if (!db.orders) db.orders = [];
         db.orders.unshift(newOrder);
+        persistDatabaseToKV(env, ctx);
         return jsonResponse({ success: true, reference_number: ref, order: newOrder }, 201);
       } catch {
         return jsonResponse({ error: 'Failed to process order' }, 400);
@@ -1086,6 +1167,7 @@ export default {
         };
         if (!db.quotes) db.quotes = [];
         db.quotes.unshift(newQuote);
+        persistDatabaseToKV(env, ctx);
         return jsonResponse({ success: true, reference_number: ref, quote: newQuote }, 201);
       } catch {
         return jsonResponse({ error: 'Failed to process quote request' }, 400);

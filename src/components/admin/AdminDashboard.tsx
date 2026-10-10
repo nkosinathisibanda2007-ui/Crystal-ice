@@ -138,6 +138,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [confirmArchiveQuoteId, setConfirmArchiveQuoteId] = useState<string | null>(null);
   const [isProcessingQuoteId, setIsProcessingQuoteId] = useState<string | null>(null);
 
+  // Order Management, Date Sorting & Monthly Records States
+  const [orderViewMode, setOrderViewMode] = useState<'active' | 'archived' | 'all'>('active');
+  const [orderSortOrder, setOrderSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [orderSelectedMonth, setOrderSelectedMonth] = useState<string>('all');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
+  const [orderSearchQuery, setOrderSearchQuery] = useState<string>('');
+  const [confirmArchiveOrderId, setConfirmArchiveOrderId] = useState<string | null>(null);
+  const [isProcessingOrderId, setIsProcessingOrderId] = useState<string | null>(null);
+
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [dashboardSuccess, setDashboardSuccess] = useState<string | null>(null);
   const [confirmDeleteProductId, setConfirmDeleteProductId] = useState<string | null>(null);
@@ -189,6 +198,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!token) return;
     setIsLoadingData(true);
     try {
+      setDashboardError(null);
       const [ordersRes, quotesRes, messagesRes, productsRes, auditRes] = await Promise.all([
         api.getAdminOrders(),
         api.getAdminQuotes(),
@@ -202,8 +212,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setProducts(Array.isArray(productsRes) ? productsRes : (productsRes as any)?.products || []);
       setAuditLogs(Array.isArray(auditRes) ? auditRes : (auditRes as any)?.logs || []);
     } catch (err: any) {
-      if (err.message?.includes('Unauthorized') || err.message?.includes('token')) {
+      if (err.message?.includes('Unauthorized') || err.message?.includes('token') || err.message?.includes('Session expired')) {
         handleLogout();
+      } else {
+        setDashboardError(`Sync error: ${err.message || 'Failed to refresh latest records from server'}`);
       }
     } finally {
       setIsLoadingData(false);
@@ -240,18 +252,85 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setUser(null);
   };
 
+  // Canonical Status options as chosen by user:
+  // Pending Review, In Review, Quoted, Accepted, and Rejected, plus delivery fulfillment and Archived
+  const CANONICAL_STATUS_OPTIONS = [
+    'Pending Review',
+    'In Review',
+    'Quoted',
+    'Accepted',
+    'Rejected'
+  ];
+
+  // Helper to normalize any existing legacy status to canonical display label
+  const normalizeOrderStatus = (status: string | undefined): string => {
+    if (!status) return 'Pending Review';
+    const s = status.trim().toLowerCase();
+    if (s === 'pending' || s === 'new' || s === 'pending review') return 'Pending Review';
+    if (s === 'reviewed' || s === 'contacted' || s === 'in review' || s === 'in_review') return 'In Review';
+    if (s === 'quoted' || s === 'proposal_sent' || s === 'proposal sent') return 'Quoted';
+    if (s === 'accepted') return 'Accepted';
+    if (s === 'rejected') return 'Rejected';
+    if (s === 'archived' || s === 'deleted') return 'Archived';
+    if (s === 'confirmed') return 'Confirmed';
+    if (s === 'out_for_delivery' || s === 'out for delivery') return 'Out for Delivery';
+    if (s === 'delivered' || s === 'completed') return 'Delivered';
+    if (s === 'cancelled' || s === 'canceled') return 'Cancelled';
+    return status;
+  };
+
   // Order status updater
   const handleUpdateOrderStatus = async (orderId: string, newStatus: any) => {
+    setIsProcessingOrderId(orderId);
     try {
       await api.updateOrderStatus(orderId, newStatus);
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
-      setDashboardSuccess('Order status updated successfully');
+      setDashboardSuccess(`Order status updated to "${newStatus}"`);
       setTimeout(() => setDashboardSuccess(null), 3000);
     } catch (err: any) {
       setDashboardError('Failed to update order status: ' + err.message);
       setTimeout(() => setDashboardError(null), 4000);
+    } finally {
+      setIsProcessingOrderId(null);
+    }
+  };
+
+  // Archive order (acts as delete button but preserves in records)
+  const handleArchiveOrder = async (orderId: string) => {
+    setIsProcessingOrderId(orderId);
+    try {
+      await api.archiveOrder(orderId);
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: 'Archived' as any } : o))
+      );
+      setConfirmArchiveOrderId(null);
+      setDashboardSuccess('Order archived to records successfully');
+      setTimeout(() => setDashboardSuccess(null), 3000);
+    } catch (err: any) {
+      setDashboardError('Failed to archive order: ' + err.message);
+      setTimeout(() => setDashboardError(null), 4000);
+    } finally {
+      setIsProcessingOrderId(null);
+    }
+  };
+
+  // Restore order from archived records back to active queue
+  const handleRestoreOrder = async (orderId: string) => {
+    setIsProcessingOrderId(orderId);
+    try {
+      await api.restoreOrder(orderId);
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: 'Pending Review' as any } : o))
+      );
+      setDashboardSuccess('Order restored to active queue (Pending Review)');
+      setTimeout(() => setDashboardSuccess(null), 3000);
+    } catch (err: any) {
+      setDashboardError('Failed to restore order: ' + err.message);
+      setTimeout(() => setDashboardError(null), 4000);
+    } finally {
+      setIsProcessingOrderId(null);
     }
   };
 
@@ -469,6 +548,116 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     return list;
   }, [quotes, quoteViewMode, quoteSelectedMonth, quoteStatusFilter, quoteSearchQuery, quoteSortOrder]);
+
+  // Dynamic monthly records calculations for Orders & Inquiries using dates and amounts per month
+  const monthlyOrderRecords = React.useMemo(() => {
+    const map: Record<string, {
+      monthKey: string;
+      monthName: string;
+      totalOrders: number;
+      totalAmount: number;
+      activeCount: number;
+      archivedCount: number;
+      acceptedCount: number;
+      pendingCount: number;
+    }> = {};
+
+    orders.forEach((o) => {
+      let d = new Date(o.created_at || o.preferred_date);
+      if (isNaN(d.getTime())) {
+        d = new Date();
+      }
+
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const monthKey = `${year}-${month}`;
+      const monthName = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+      if (!map[monthKey]) {
+        map[monthKey] = {
+          monthKey,
+          monthName,
+          totalOrders: 0,
+          totalAmount: 0,
+          activeCount: 0,
+          archivedCount: 0,
+          acceptedCount: 0,
+          pendingCount: 0
+        };
+      }
+
+      const record = map[monthKey];
+      record.totalOrders += 1;
+      record.totalAmount += (o.total_estimated_amount || 0);
+
+      const norm = normalizeOrderStatus(o.status);
+      if (norm === 'Archived') {
+        record.archivedCount += 1;
+      } else {
+        record.activeCount += 1;
+      }
+
+      if (norm === 'Pending Review') record.pendingCount += 1;
+      else if (norm === 'Accepted' || norm === 'Confirmed' || norm === 'Delivered') record.acceptedCount += 1;
+    });
+
+    return Object.values(map).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+  }, [orders]);
+
+  // Filtered & sorted orders
+  const displayedOrders = React.useMemo(() => {
+    const list = orders.filter((o) => {
+      const norm = normalizeOrderStatus(o.status);
+
+      // View mode filter
+      if (orderViewMode === 'active' && norm === 'Archived') return false;
+      if (orderViewMode === 'archived' && norm !== 'Archived') return false;
+
+      // Month filter
+      if (orderSelectedMonth !== 'all') {
+        const d = new Date(o.created_at || o.preferred_date);
+        if (!isNaN(d.getTime())) {
+          const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          if (mKey !== orderSelectedMonth) return false;
+        }
+      }
+
+      // Status filter
+      if (orderStatusFilter !== 'all') {
+        if (norm !== orderStatusFilter) return false;
+      }
+
+      // Search query
+      if (orderSearchQuery.trim()) {
+        const q = orderSearchQuery.toLowerCase();
+        const ref = (o.reference_number || '').toLowerCase();
+        const name = (o.customer_name || '').toLowerCase();
+        const biz = (o.business_name || '').toLowerCase();
+        const phone = (o.customer_phone || '').toLowerCase();
+        const email = (o.customer_email || '').toLowerCase();
+        if (
+          !ref.includes(q) &&
+          !name.includes(q) &&
+          !biz.includes(q) &&
+          !phone.includes(q) &&
+          !email.includes(q)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Date sorting: newest vs oldest
+    list.sort((a, b) => {
+      const timeA = new Date(a.created_at || a.preferred_date).getTime() || 0;
+      const timeB = new Date(b.created_at || b.preferred_date).getTime() || 0;
+      return orderSortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
+
+    return list;
+  }, [orders, orderViewMode, orderSelectedMonth, orderStatusFilter, orderSearchQuery, orderSortOrder]);
 
   // Save Settings
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -812,18 +1001,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Main Admin Workspace */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left Sidebar Navigation */}
-        <aside className="w-full md:w-60 bg-white border-r border-slate-200 p-3 shrink-0 flex md:flex-col overflow-x-auto md:overflow-y-auto space-x-1 md:space-x-0 md:space-y-1">
+        <aside className="w-full md:w-60 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-2 md:p-3 shrink-0 flex md:flex-col overflow-x-auto md:overflow-y-auto gap-1">
           <button
             onClick={() => setActiveAdminTab('overview')}
-            className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors shrink-0 ${
+            className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors shrink-0 ${
               activeAdminTab === 'overview'
-                ? 'bg-cyan-50 text-cyan-700'
-                : 'text-slate-600 hover:bg-slate-50'
+                ? 'bg-cyan-700 text-white shadow-xs'
+                : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
-              <span>Dashboard Overview</span>
+              <span>Overview</span>
             </div>
           </button>
 
@@ -831,10 +1020,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button
               id="admin-tab-orders"
               onClick={() => setActiveAdminTab('orders')}
-              className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors shrink-0 ${
+              className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition-colors shrink-0 ${
                 activeAdminTab === 'orders'
-                  ? 'bg-cyan-50 text-cyan-700'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'bg-cyan-700 text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -842,7 +1031,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span>Customer Orders</span>
               </div>
               {pendingOrders.length > 0 && (
-                <span className="px-2 py-0.5 text-[10px] font-extrabold bg-cyan-600 text-white rounded-full">
+                <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${activeAdminTab === 'orders' ? 'bg-white text-cyan-800' : 'bg-cyan-600 text-white'}`}>
                   {pendingOrders.length}
                 </span>
               )}
@@ -853,10 +1042,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button
               id="admin-tab-quotes"
               onClick={() => setActiveAdminTab('quotes')}
-              className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors shrink-0 ${
+              className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition-colors shrink-0 ${
                 activeAdminTab === 'quotes'
-                  ? 'bg-cyan-50 text-cyan-700'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -864,7 +1053,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span>Commercial Quotes</span>
               </div>
               {pendingQuotes.length > 0 && (
-                <span className="px-2 py-0.5 text-[10px] font-extrabold bg-amber-500 text-white rounded-full">
+                <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${activeAdminTab === 'quotes' ? 'bg-white text-amber-800' : 'bg-amber-500 text-white'}`}>
                   {pendingQuotes.length}
                 </span>
               )}
@@ -1186,117 +1375,425 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           )}
 
           {/* ============================================================ */}
-          {/* TAB 2: ORDERS MANAGEMENT */}
+          {/* TAB 2: ORDERS MANAGEMENT & MONTHLY RECORDS */}
           {/* ============================================================ */}
           {activeAdminTab === 'orders' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-black text-slate-900 font-['Outfit']">
-                    Customer Ice Orders
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Live dispatch queue with immediate status updates
-                  </p>
-                </div>
-                <span className="text-xs font-bold text-slate-500 bg-slate-200/70 px-2.5 py-1 rounded-full">
-                  {orders.length} Total Records
-                </span>
+            <div className="space-y-6">
+              {/* Quick Tab Switcher between Commercial Quotes and Orders */}
+              <div className="flex items-center gap-2 p-1.5 bg-slate-200/80 rounded-2xl w-full sm:w-fit">
+                <button
+                  type="button"
+                  onClick={() => setActiveAdminTab('quotes')}
+                  className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900"
+                >
+                  <FileText className="w-4 h-4 text-amber-500" />
+                  <span>Commercial Quotes ({quotes.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveAdminTab('orders')}
+                  className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-white text-cyan-800 shadow-sm"
+                >
+                  <ShoppingBag className="w-4 h-4 text-cyan-600" />
+                  <span>Customer Orders ({orders.length})</span>
+                </button>
               </div>
 
-              {orders.length === 0 ? (
+              {/* Header & KPI Summary */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 font-['Outfit'] flex items-center gap-2">
+                    <ShoppingBag className="w-5 h-5 text-cyan-600" />
+                    <span>Customer Ice Orders & Monthly Demand</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Chronological order queue, delete/archival records, and monthly amounts tracking
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-xs tabular-nums">
+                    {orders.length} Total All-Time
+                  </span>
+                  <button
+                    onClick={loadAdminData}
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition-colors"
+                    title="Refresh Orders"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isLoadingData ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Monthly Records & Volume Analytics Banner */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-cyan-600" />
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                      Monthly Records & Revenue Volumes
+                    </h3>
+                  </div>
+                  <span className="text-[11px] text-slate-400">
+                    Updated dynamically from order dates and total amounts
+                  </span>
+                </div>
+
+                {monthlyOrderRecords.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-2">No monthly order records recorded yet.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {monthlyOrderRecords.map((m) => {
+                      const isSelected = orderSelectedMonth === m.monthKey;
+                      return (
+                        <div
+                          key={m.monthKey}
+                          onClick={() => setOrderSelectedMonth(isSelected ? 'all' : m.monthKey)}
+                          className={`p-3.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-cyan-50/70 border-cyan-400 shadow-xs ring-1 ring-cyan-400/50'
+                              : 'bg-slate-50/70 hover:bg-slate-100/70 border-slate-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-900 font-['Outfit']">
+                              {m.monthName}
+                            </span>
+                            <span className="text-[11px] font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-200 text-cyan-800 tabular-nums">
+                              {m.totalOrders} {m.totalOrders === 1 ? 'order' : 'orders'}
+                            </span>
+                          </div>
+
+                          <div className="mt-2 text-sm font-black text-cyan-700 font-['Outfit']">
+                            ${m.totalAmount.toFixed(2)}
+                          </div>
+
+                          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
+                            <span>Active: <strong className="text-slate-800 tabular-nums">{m.activeCount}</strong></span>
+                            <span>Archived: <strong className="text-slate-600 tabular-nums">{m.archivedCount}</strong></span>
+                            <span>Done: <strong className="text-emerald-700 tabular-nums">{m.acceptedCount}</strong></span>
+                          </div>
+
+                          <div className="mt-2 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px] text-slate-400">
+                            <span>{isSelected ? '✓ Filter Active' : 'Click to filter'}</span>
+                            <span className="font-mono">{m.monthKey}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Controls Toolbar: View Mode Tabs, Month Filter, Status Filter, Search, and Date Sort Toggle */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  {/* Segmented View Mode Tabs: Active, Archived Records, All */}
+                  <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl text-xs font-medium">
+                    <button
+                      type="button"
+                      onClick={() => setOrderViewMode('active')}
+                      className={`px-3 py-1.5 rounded-lg transition-colors font-bold flex items-center gap-1.5 ${
+                        orderViewMode === 'active'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>Active Orders</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 tabular-nums">
+                        {orders.filter((o) => normalizeOrderStatus(o.status) !== 'Archived').length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setOrderViewMode('archived')}
+                      className={`px-3 py-1.5 rounded-lg transition-colors font-bold flex items-center gap-1.5 ${
+                        orderViewMode === 'archived'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Archive className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Archived Records</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 tabular-nums">
+                        {orders.filter((o) => normalizeOrderStatus(o.status) === 'Archived').length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setOrderViewMode('all')}
+                      className={`px-3 py-1.5 rounded-lg transition-colors font-bold flex items-center gap-1.5 ${
+                        orderViewMode === 'all'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>All Orders</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 tabular-nums">
+                        {orders.length}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Date Sort Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setOrderSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors shadow-2xs"
+                    title="Toggle Date Order"
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5 text-cyan-600" />
+                    <span>Order: {orderSortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
+                  </button>
+                </div>
+
+                {/* Filter and Search Bar */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-slate-100">
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search orders, clients, phones..."
+                      value={orderSearchQuery}
+                      onChange={(e) => setOrderSearchQuery(e.target.value)}
+                      className="w-full pl-8.5 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    />
+                    {orderSearchQuery && (
+                      <button
+                        onClick={() => setOrderSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Month Filter Selector */}
+                  <div className="relative">
+                    <select
+                      value={orderSelectedMonth}
+                      onChange={(e) => setOrderSelectedMonth(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-medium text-slate-700"
+                    >
+                      <option value="all">All Months</option>
+                      {monthlyOrderRecords.map((m) => (
+                        <option key={m.monthKey} value={m.monthKey}>
+                          {m.monthName} ({m.totalOrders} orders · ${m.totalAmount.toFixed(0)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Status Filter Selector */}
+                  <div className="relative">
+                    <select
+                      value={orderStatusFilter}
+                      onChange={(e) => setOrderStatusFilter(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-cyan-500 font-medium text-slate-700"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="Pending Review">Pending Review</option>
+                      <option value="In Review">In Review</option>
+                      <option value="Quoted">Quoted</option>
+                      <option value="Accepted">Accepted</option>
+                      <option value="Rejected">Rejected</option>
+                      <option value="Confirmed">Confirmed</option>
+                      <option value="Out for Delivery">Out for Delivery</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                      <option value="Archived">Archived</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Orders List */}
+              {displayedOrders.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-xs">
-                  No orders placed yet.
+                  No orders match the selected filters.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {orders.map((order) => (
-                    <div
-                      key={order.id}
-                      id={`admin-order-row-${order.id}`}
-                      className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-black font-mono text-cyan-700">
-                            #{order.reference_number}
-                          </span>
-                          <span className="text-xs font-bold text-slate-800">
-                            {order.customer_name}
-                          </span>
-                          {order.business_name && (
-                            <span className="text-xs text-slate-500 font-medium">
-                              • {order.business_name}
+                  {displayedOrders.map((order) => {
+                    const normStatus = normalizeOrderStatus(order.status);
+                    const isArchived = normStatus === 'Archived';
+                    const isProcessing = isProcessingOrderId === order.id;
+
+                    return (
+                      <div
+                        key={order.id}
+                        id={`admin-order-row-${order.id}`}
+                        className={`bg-white rounded-2xl border p-5 shadow-sm space-y-3 transition-all ${
+                          isArchived
+                            ? 'border-slate-200 bg-slate-50/50 opacity-85'
+                            : 'border-slate-200 hover:border-cyan-300'
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black font-mono text-cyan-700">
+                              #{order.reference_number}
                             </span>
-                          )}
-                        </div>
-
-                        {/* Status Select Controller */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] uppercase font-bold text-slate-400">Status:</span>
-                          <select
-                            value={order.status}
-                            onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
-                            className="p-1.5 text-xs font-bold rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-slate-50"
-                          >
-                            <option value="pending">Pending Review</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="out_for_delivery">Out for Delivery</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-600">
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Contact Info</span>
-                          <p className="font-semibold text-slate-800">{order.customer_phone}</p>
-                          {order.customer_email && <p className="text-slate-500">{order.customer_email}</p>}
-                        </div>
-
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Fulfillment</span>
-                          <p className="font-semibold text-slate-800 capitalize">{order.delivery_type}</p>
-                          <p className="text-slate-500">{order.preferred_date} ({order.preferred_time_slot})</p>
-                          {order.delivery_address && (
-                            <p className="text-[11px] text-slate-600 truncate mt-0.5">{order.delivery_address}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Amount Total</span>
-                          <p className="text-base font-black text-cyan-700 font-['Outfit']">
-                            ${order.total_estimated_amount.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Items breakdown */}
-                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                          Ordered Ice Specifications:
-                        </span>
-                        <div className="space-y-1">
-                          {order.items.map((item, idx) => (
-                            <div key={idx} className="flex justify-between text-slate-700">
-                              <span>
-                                {item.quantity}× {item.product_name} ({item.package_size})
+                            <span className="text-xs font-bold text-slate-900">
+                              {order.customer_name}
+                            </span>
+                            {order.business_name && (
+                              <span className="text-xs text-slate-500 font-medium">
+                                • {order.business_name}
                               </span>
-                              <span className="font-semibold">
-                                ${((item.unit_price || 0) * item.quantity).toFixed(2)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        {order.notes && (
-                          <div className="mt-2 pt-2 border-t border-slate-200 text-[11px] text-slate-500">
-                            <strong>Logistics Notes:</strong> {order.notes}
+                            )}
                           </div>
-                        )}
+
+                          {/* Status and Action Buttons */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Color-coded Status Badge */}
+                            <span
+                              className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${
+                                normStatus === 'Pending Review'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : normStatus === 'In Review'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : normStatus === 'Quoted'
+                                  ? 'bg-indigo-100 text-indigo-800'
+                                  : normStatus === 'Accepted' || normStatus === 'Delivered'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : normStatus === 'Rejected' || normStatus === 'Cancelled'
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : normStatus === 'Confirmed'
+                                  ? 'bg-cyan-100 text-cyan-800'
+                                  : normStatus === 'Out for Delivery'
+                                  ? 'bg-violet-100 text-violet-800'
+                                  : 'bg-slate-200 text-slate-700'
+                              }`}
+                            >
+                              {normStatus}
+                            </span>
+
+                            {/* Status Select Controller */}
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] uppercase font-bold text-slate-400">Status:</span>
+                              <select
+                                value={normStatus}
+                                onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                                disabled={isProcessing}
+                                className="p-1.5 text-xs font-bold rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-slate-50 cursor-pointer"
+                              >
+                                <option value="Pending Review">Pending Review</option>
+                                <option value="In Review">In Review</option>
+                                <option value="Quoted">Quoted</option>
+                                <option value="Accepted">Accepted</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Confirmed">Confirmed</option>
+                                <option value="Out for Delivery">Out for Delivery</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Cancelled">Cancelled</option>
+                                {isArchived && <option value="Archived">Archived</option>}
+                              </select>
+                            </div>
+
+                            {/* Delete / Archive Button */}
+                            {isArchived ? (
+                              <button
+                                type="button"
+                                onClick={() => handleRestoreOrder(order.id)}
+                                disabled={isProcessing}
+                                className="px-2.5 py-1.5 text-xs font-bold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded-xl border border-cyan-200 transition-colors flex items-center gap-1"
+                                title="Restore order to active list"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                <span>Restore</span>
+                              </button>
+                            ) : confirmArchiveOrderId === order.id ? (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleArchiveOrder(order.id)}
+                                  disabled={isProcessing}
+                                  className="px-2.5 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors flex items-center gap-1 shadow-xs"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>Confirm Delete</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmArchiveOrderId(null)}
+                                  className="px-2 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 rounded-xl"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmArchiveOrderId(order.id)}
+                                disabled={isProcessing}
+                                className="px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl border border-rose-200 transition-colors flex items-center gap-1"
+                                title="Delete order (archive to historical records)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Delete</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Customer & Fulfillment Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-600">
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Contact Info</span>
+                            <p className="font-semibold text-slate-800">{order.customer_phone}</p>
+                            {order.customer_email && <p className="text-slate-500">{order.customer_email}</p>}
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Fulfillment</span>
+                            <p className="font-semibold text-slate-800 capitalize">{order.delivery_type}</p>
+                            <p className="text-slate-500">{order.preferred_date} ({order.preferred_time_slot})</p>
+                            {order.delivery_address && (
+                              <p className="text-[11px] text-slate-600 truncate mt-0.5">{order.delivery_address}</p>
+                            )}
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Amount Total</span>
+                            <p className="text-base font-black text-cyan-700 font-['Outfit']">
+                              ${order.total_estimated_amount.toFixed(2)}
+                            </p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {order.created_at ? formatQuoteDate(order.created_at) : order.preferred_date}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Items breakdown */}
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                            Ordered Ice Specifications:
+                          </span>
+                          <div className="space-y-1">
+                            {order.items.map((item, idx) => (
+                              <div key={idx} className="flex justify-between text-slate-700">
+                                <span>
+                                  {item.quantity}× {item.product_name} ({item.package_size})
+                                </span>
+                                <span className="font-semibold">
+                                  ${((item.unit_price || 0) * item.quantity).toFixed(2)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          {order.notes && (
+                            <div className="mt-2 pt-2 border-t border-slate-200 text-[11px] text-slate-500">
+                              <strong>Logistics Notes:</strong> {order.notes}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1307,6 +1804,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* ============================================================ */}
           {activeAdminTab === 'quotes' && (
             <div className="space-y-6">
+              {/* Quick Tab Switcher between Commercial Quotes and Orders */}
+              <div className="flex items-center gap-2 p-1.5 bg-slate-200/80 rounded-2xl w-full sm:w-fit">
+                <button
+                  type="button"
+                  onClick={() => setActiveAdminTab('quotes')}
+                  className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-white text-cyan-800 shadow-sm"
+                >
+                  <FileText className="w-4 h-4 text-amber-500" />
+                  <span>Commercial Quotes ({quotes.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveAdminTab('orders')}
+                  className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900"
+                >
+                  <ShoppingBag className="w-4 h-4 text-cyan-600" />
+                  <span>Customer Orders ({orders.length})</span>
+                </button>
+              </div>
+
               {/* Header & KPI Summary */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
