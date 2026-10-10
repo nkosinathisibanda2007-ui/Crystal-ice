@@ -382,16 +382,37 @@ export default {
         if (method === 'GET') return jsonResponse(db.quotes || []);
       }
 
-      if (pathname.startsWith('/api/admin/quotes/') && method === 'PATCH') {
-        const id = pathname.replace('/api/admin/quotes/', '');
+      if (pathname.startsWith('/api/admin/quotes/')) {
+        let subpath = pathname.replace('/api/admin/quotes/', '');
+        const isStatus = subpath.endsWith('/status');
+        const isRestore = subpath.endsWith('/restore');
+        if (isStatus) subpath = subpath.replace(/\/status$/, '');
+        if (isRestore) subpath = subpath.replace(/\/restore$/, '');
+        const id = decodeURIComponent(subpath);
+
         const quote = (db.quotes || []).find((q: any) => q.id === id);
         if (!quote) return jsonResponse({ error: 'Quote request not found' }, 404);
-        try {
-          const updates = await request.json();
-          Object.assign(quote, updates, { updated_at: new Date().toISOString() });
-          return jsonResponse({ success: true, quote });
-        } catch {
-          return jsonResponse({ error: 'Invalid JSON' }, 400);
+
+        if (method === 'PATCH' || (method === 'POST' && isStatus)) {
+          try {
+            const updates = await request.json();
+            Object.assign(quote, updates, { updated_at: new Date().toISOString() });
+            return jsonResponse({ success: true, quote });
+          } catch {
+            return jsonResponse({ error: 'Invalid JSON' }, 400);
+          }
+        }
+
+        if (method === 'DELETE') {
+          quote.status = 'Archived';
+          quote.updated_at = new Date().toISOString();
+          return jsonResponse({ success: true, quote, message: 'Quote archived to records.' });
+        }
+
+        if (method === 'POST' && isRestore) {
+          quote.status = 'Pending Review';
+          quote.updated_at = new Date().toISOString();
+          return jsonResponse({ success: true, quote, message: 'Quote restored to active.' });
         }
       }
 

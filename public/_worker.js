@@ -613,9 +613,9 @@ var db_default = {
       notes: "",
       id: "qte-1791223698608",
       reference_number: "CI-QTE-9262",
-      status: "New",
+      status: "Pending Review",
       created_at: "2026-10-05T18:08:18.608Z",
-      updated_at: "2026-10-05T18:08:18.608Z"
+      updated_at: "2026-10-10T09:11:15.931Z"
     },
     {
       customer_name: "Harare Grill",
@@ -956,6 +956,45 @@ var db_default = {
     }
   ],
   audit_logs: [
+    {
+      id: "aud-1791623475931-361",
+      user_name: "Operations Director",
+      user_role: "admin",
+      action: "QUOTE_RESTORED",
+      record_type: "quote",
+      record_id: "qte-1791223698608",
+      details: "Quote CI-QTE-9262 restored from archive to Pending Review.",
+      timestamp: "2026-10-10T09:11:15.931Z"
+    },
+    {
+      id: "aud-1791623469723-99",
+      user_name: "Operations Director",
+      user_role: "admin",
+      action: "QUOTE_ARCHIVED",
+      record_type: "quote",
+      record_id: "qte-1791223698608",
+      details: "Quote CI-QTE-9262 archived to historical records.",
+      timestamp: "2026-10-10T09:11:09.723Z"
+    },
+    {
+      id: "aud-1791623463235-723",
+      user_name: "Operations Director",
+      user_role: "admin",
+      action: "QUOTE_STATUS_CHANGED",
+      record_type: "quote",
+      record_id: "qte-1791223698608",
+      details: "Quote CI-QTE-9262 status updated to In Review.",
+      timestamp: "2026-10-10T09:11:03.235Z"
+    },
+    {
+      id: "aud-1791623452541-953",
+      user_name: "Operations Director",
+      user_role: "admin",
+      action: "LOGIN_SUCCESS",
+      record_type: "auth",
+      details: "Staff logged in: admin@crystalice.co.zw (admin)",
+      timestamp: "2026-10-10T09:10:52.541Z"
+    },
     {
       id: "aud-1791570385900-758",
       user_name: "Operations Director",
@@ -1681,6 +1720,12 @@ var db_default = {
       userId: "usr-admin-1",
       createdAt: "2026-10-09T18:26:22.224Z",
       expiresAt: "2026-10-16T18:26:22.224Z"
+    },
+    {
+      token: "e6485c4214cd3f3875de053d3cabcda1b219f347dca12a2cd39c4606451da687",
+      userId: "usr-admin-1",
+      createdAt: "2026-10-10T09:10:52.541Z",
+      expiresAt: "2026-10-17T09:10:52.541Z"
     }
   ],
   user_roles: [
@@ -2082,16 +2127,33 @@ var cf_worker_default = {
       if (pathname === "/api/admin/quotes") {
         if (method === "GET") return jsonResponse(db.quotes || []);
       }
-      if (pathname.startsWith("/api/admin/quotes/") && method === "PATCH") {
-        const id = pathname.replace("/api/admin/quotes/", "");
+      if (pathname.startsWith("/api/admin/quotes/")) {
+        let subpath = pathname.replace("/api/admin/quotes/", "");
+        const isStatus = subpath.endsWith("/status");
+        const isRestore = subpath.endsWith("/restore");
+        if (isStatus) subpath = subpath.replace(/\/status$/, "");
+        if (isRestore) subpath = subpath.replace(/\/restore$/, "");
+        const id = decodeURIComponent(subpath);
         const quote = (db.quotes || []).find((q) => q.id === id);
         if (!quote) return jsonResponse({ error: "Quote request not found" }, 404);
-        try {
-          const updates = await request.json();
-          Object.assign(quote, updates, { updated_at: (/* @__PURE__ */ new Date()).toISOString() });
-          return jsonResponse({ success: true, quote });
-        } catch {
-          return jsonResponse({ error: "Invalid JSON" }, 400);
+        if (method === "PATCH" || method === "POST" && isStatus) {
+          try {
+            const updates = await request.json();
+            Object.assign(quote, updates, { updated_at: (/* @__PURE__ */ new Date()).toISOString() });
+            return jsonResponse({ success: true, quote });
+          } catch {
+            return jsonResponse({ error: "Invalid JSON" }, 400);
+          }
+        }
+        if (method === "DELETE") {
+          quote.status = "Archived";
+          quote.updated_at = (/* @__PURE__ */ new Date()).toISOString();
+          return jsonResponse({ success: true, quote, message: "Quote archived to records." });
+        }
+        if (method === "POST" && isRestore) {
+          quote.status = "Pending Review";
+          quote.updated_at = (/* @__PURE__ */ new Date()).toISOString();
+          return jsonResponse({ success: true, quote, message: "Quote restored to active." });
         }
       }
       if (pathname === "/api/admin/contacts") {

@@ -1041,6 +1041,50 @@ export class DatabaseStore {
     return quote;
   }
 
+  public archiveQuote(id: string, adminUser: AdminUser): QuoteRequest | null {
+    if (!this.hasPermission(adminUser.id, 'manage_orders')) {
+      throw new Error('Permission denied: manage_orders required.');
+    }
+    const quote = this.data.quote_requests.find(q => q.id === id);
+    if (!quote) return null;
+    quote.status = 'Archived';
+    quote.updated_at = new Date().toISOString();
+    this.saveDatabase();
+
+    this.addAuditLog(
+      adminUser.name,
+      adminUser.role,
+      'QUOTE_ARCHIVED',
+      'quote',
+      `Quote ${quote.reference_number} archived to historical records.`,
+      quote.id
+    );
+    this.broadcastChange('quotes');
+    return quote;
+  }
+
+  public restoreQuote(id: string, adminUser: AdminUser): QuoteRequest | null {
+    if (!this.hasPermission(adminUser.id, 'manage_orders')) {
+      throw new Error('Permission denied: manage_orders required.');
+    }
+    const quote = this.data.quote_requests.find(q => q.id === id);
+    if (!quote) return null;
+    quote.status = 'Pending Review';
+    quote.updated_at = new Date().toISOString();
+    this.saveDatabase();
+
+    this.addAuditLog(
+      adminUser.name,
+      adminUser.role,
+      'QUOTE_RESTORED',
+      'quote',
+      `Quote ${quote.reference_number} restored from archive to Pending Review.`,
+      quote.id
+    );
+    this.broadcastChange('quotes');
+    return quote;
+  }
+
   // Contacts Admin
   public getAllContactsAdmin(): ContactSubmission[] {
     return this.data.contact_submissions;

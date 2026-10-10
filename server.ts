@@ -804,6 +804,31 @@ app.patch('/api/admin/quotes/:id/status', requireAdminAuth, requirePermission('m
   res.json(updated);
 });
 
+app.patch('/api/admin/quotes/:id', requireAdminAuth, requirePermission('manage_orders'), (req: AuthenticatedRequest, res: Response) => {
+  const { status, internal_notes } = req.body;
+  const updated = dbStore.updateQuoteStatus(req.params.id, status, internal_notes, req.adminUser!);
+  if (!updated) {
+    return res.status(404).json({ error: 'Quote not found' });
+  }
+  res.json(updated);
+});
+
+app.delete('/api/admin/quotes/:id', requireAdminAuth, requirePermission('manage_orders'), (req: AuthenticatedRequest, res: Response) => {
+  const archived = dbStore.archiveQuote(req.params.id, req.adminUser!);
+  if (!archived) {
+    return res.status(404).json({ error: 'Quote not found' });
+  }
+  res.json({ success: true, quote: archived, message: 'Quote archived to records.' });
+});
+
+app.post('/api/admin/quotes/:id/restore', requireAdminAuth, requirePermission('manage_orders'), (req: AuthenticatedRequest, res: Response) => {
+  const restored = dbStore.restoreQuote(req.params.id, req.adminUser!);
+  if (!restored) {
+    return res.status(404).json({ error: 'Quote not found' });
+  }
+  res.json({ success: true, quote: restored, message: 'Quote restored to active.' });
+});
+
 // Contact Submissions
 app.get('/api/admin/contacts', requireAdminAuth, requirePermission('view_orders'), (req: AuthenticatedRequest, res: Response) => {
   res.json(dbStore.getAllContactsAdmin());

@@ -9,12 +9,34 @@ export type OrderStatus =
   | 'Cancelled';
 
 export type QuoteStatus =
-  | 'New'
-  | 'Contacted'
+  | 'Pending Review'
   | 'In Review'
   | 'Quoted'
   | 'Accepted'
-  | 'Archived';
+  | 'Rejected'
+  | 'Archived'
+  | 'New'
+  | 'Contacted'
+  | 'pending'
+  | 'reviewed'
+  | 'proposal_sent'
+  | 'accepted'
+  | 'rejected';
+
+export interface MonthlyQuoteRecord {
+  monthKey: string;      // e.g. "2026-10"
+  monthName: string;     // e.g. "October 2026"
+  totalQuotes: number;
+  activeCount: number;
+  archivedCount: number;
+  pendingCount: number;
+  inReviewCount: number;
+  quotedCount: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  firstDate?: string;
+  lastDate?: string;
+}
 
 export interface ProductCategory {
   id: string;

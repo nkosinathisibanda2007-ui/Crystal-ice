@@ -510,10 +510,29 @@ export const api = {
   },
 
   async updateQuoteStatus(id: string, status: QuoteRequest['status'], internalNotes?: string): Promise<QuoteRequest> {
-    return this.adminRequest(`/api/admin/quotes/${id}/status`, {
+    const res: any = await this.adminRequest(`/api/admin/quotes/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status, internal_notes: internalNotes })
     });
+    return res?.quote || res;
+  },
+
+  async archiveQuote(id: string): Promise<QuoteRequest> {
+    const res: any = await this.adminRequest(`/api/admin/quotes/${id}`, {
+      method: 'DELETE'
+    });
+    return res?.quote || res;
+  },
+
+  async restoreQuote(id: string): Promise<QuoteRequest> {
+    const res: any = await this.adminRequest(`/api/admin/quotes/${id}/restore`, {
+      method: 'POST'
+    });
+    return res?.quote || res;
+  },
+
+  async deleteQuote(id: string): Promise<QuoteRequest> {
+    return this.archiveQuote(id);
   },
 
   // Admin Contacts

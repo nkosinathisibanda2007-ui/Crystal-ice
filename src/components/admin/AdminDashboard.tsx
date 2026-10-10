@@ -33,11 +33,19 @@ import {
   Bookmark,
   UploadCloud,
   ImageIcon,
-  Camera
+  Camera,
+  ArrowUpDown,
+  RotateCcw,
+  Archive,
+  Calendar,
+  Filter,
+  Search
 } from 'lucide-react';
 import {
   Order,
   Quote,
+  QuoteStatus,
+  MonthlyQuoteRecord,
   ContactMessage,
   Product,
   WebsiteSettings,
@@ -120,6 +128,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [settingsForm, setSettingsForm] = useState<WebsiteSettings>(initialSettings);
   const [settingsSaveSuccess, setSettingsSaveSuccess] = useState(false);
+
+  // Quote Management, Date Sorting & Monthly Records States
+  const [quoteViewMode, setQuoteViewMode] = useState<'active' | 'archived' | 'all'>('active');
+  const [quoteSortOrder, setQuoteSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [quoteSelectedMonth, setQuoteSelectedMonth] = useState<string>('all');
+  const [quoteStatusFilter, setQuoteStatusFilter] = useState<string>('all');
+  const [quoteSearchQuery, setQuoteSearchQuery] = useState<string>('');
+  const [confirmArchiveQuoteId, setConfirmArchiveQuoteId] = useState<string | null>(null);
+  const [isProcessingQuoteId, setIsProcessingQuoteId] = useState<string | null>(null);
 
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [dashboardSuccess, setDashboardSuccess] = useState<string | null>(null);
@@ -238,20 +255,220 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  // Canonical Quote Status options as chosen by user:
+  // Pending Review, In Review, Quoted, Accepted, and Rejected, plus Archived
+  const CANONICAL_QUOTE_STATUSES: QuoteStatus[] = [
+    'Pending Review',
+    'In Review',
+    'Quoted',
+    'Accepted',
+    'Rejected'
+  ];
+
+  // Helper to normalize any existing legacy status to canonical display label
+  const normalizeQuoteStatus = (status: string | undefined): QuoteStatus => {
+    if (!status) return 'Pending Review';
+    const s = status.trim().toLowerCase();
+    if (s === 'pending' || s === 'new' || s === 'pending review') return 'Pending Review';
+    if (s === 'reviewed' || s === 'contacted' || s === 'in review' || s === 'in_review') return 'In Review';
+    if (s === 'quoted' || s === 'proposal_sent' || s === 'proposal sent') return 'Quoted';
+    if (s === 'accepted') return 'Accepted';
+    if (s === 'rejected') return 'Rejected';
+    if (s === 'archived' || s === 'deleted') return 'Archived';
+    return (status as QuoteStatus) || 'Pending Review';
+  };
+
+  const formatQuoteDate = (dateStr: string | undefined) => {
+    if (!dateStr) return 'Date unknown';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return (
+      d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }) +
+      ' · ' +
+      d.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+    );
+  };
+
   // Quote status updater
-  const handleUpdateQuoteStatus = async (quoteId: string, newStatus: any) => {
+  const handleUpdateQuoteStatus = async (quoteId: string, newStatus: QuoteStatus) => {
+    setIsProcessingQuoteId(quoteId);
     try {
       await api.updateQuoteStatus(quoteId, newStatus);
       setQuotes((prev) =>
         prev.map((q) => (q.id === quoteId ? { ...q, status: newStatus } : q))
       );
-      setDashboardSuccess('Quote status updated successfully');
+      setDashboardSuccess(`Quote status updated to "${newStatus}"`);
       setTimeout(() => setDashboardSuccess(null), 3000);
     } catch (err: any) {
       setDashboardError('Failed to update quote status: ' + err.message);
       setTimeout(() => setDashboardError(null), 4000);
+    } finally {
+      setIsProcessingQuoteId(null);
     }
   };
+
+  // Archive quote (acts as delete button but preserves in records)
+  const handleArchiveQuote = async (quoteId: string) => {
+    setIsProcessingQuoteId(quoteId);
+    try {
+      await api.archiveQuote(quoteId);
+      setQuotes((prev) =>
+        prev.map((q) => (q.id === quoteId ? { ...q, status: 'Archived' } : q))
+      );
+      setConfirmArchiveQuoteId(null);
+      setDashboardSuccess('Quote archived to records successfully');
+      setTimeout(() => setDashboardSuccess(null), 3000);
+    } catch (err: any) {
+      setDashboardError('Failed to archive quote: ' + err.message);
+      setTimeout(() => setDashboardError(null), 4000);
+    } finally {
+      setIsProcessingQuoteId(null);
+    }
+  };
+
+  // Restore quote from archived records back to active queue
+  const handleRestoreQuote = async (quoteId: string) => {
+    setIsProcessingQuoteId(quoteId);
+    try {
+      await api.restoreQuote(quoteId);
+      setQuotes((prev) =>
+        prev.map((q) => (q.id === quoteId ? { ...q, status: 'Pending Review' } : q))
+      );
+      setDashboardSuccess('Quote restored to active queue (Pending Review)');
+      setTimeout(() => setDashboardSuccess(null), 3000);
+    } catch (err: any) {
+      setDashboardError('Failed to restore quote: ' + err.message);
+      setTimeout(() => setDashboardError(null), 4000);
+    } finally {
+      setIsProcessingQuoteId(null);
+    }
+  };
+
+  // Dynamic monthly records calculations using dates quotes requested and amounts per month
+  const monthlyQuoteRecords = React.useMemo(() => {
+    const map: Record<string, MonthlyQuoteRecord> = {};
+
+    quotes.forEach((q) => {
+      let d = new Date(q.created_at);
+      if (isNaN(d.getTime())) {
+        d = new Date();
+      }
+
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const monthKey = `${year}-${month}`;
+      const monthName = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+      if (!map[monthKey]) {
+        map[monthKey] = {
+          monthKey,
+          monthName,
+          totalQuotes: 0,
+          activeCount: 0,
+          archivedCount: 0,
+          pendingCount: 0,
+          inReviewCount: 0,
+          quotedCount: 0,
+          acceptedCount: 0,
+          rejectedCount: 0,
+          firstDate: q.created_at,
+          lastDate: q.created_at
+        };
+      }
+
+      const record = map[monthKey];
+      record.totalQuotes += 1;
+
+      const norm = normalizeQuoteStatus(q.status);
+      if (norm === 'Archived') {
+        record.archivedCount += 1;
+      } else {
+        record.activeCount += 1;
+      }
+
+      if (norm === 'Pending Review') record.pendingCount += 1;
+      else if (norm === 'In Review') record.inReviewCount += 1;
+      else if (norm === 'Quoted') record.quotedCount += 1;
+      else if (norm === 'Accepted') record.acceptedCount += 1;
+      else if (norm === 'Rejected') record.rejectedCount += 1;
+
+      if (q.created_at && (!record.firstDate || q.created_at < record.firstDate)) {
+        record.firstDate = q.created_at;
+      }
+      if (q.created_at && (!record.lastDate || q.created_at > record.lastDate)) {
+        record.lastDate = q.created_at;
+      }
+    });
+
+    return Object.values(map).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+  }, [quotes]);
+
+  // Filtered & sorted quotes
+  const displayedQuotes = React.useMemo(() => {
+    const list = quotes.filter((q) => {
+      const norm = normalizeQuoteStatus(q.status);
+
+      // View mode filter
+      if (quoteViewMode === 'active' && norm === 'Archived') return false;
+      if (quoteViewMode === 'archived' && norm !== 'Archived') return false;
+
+      // Month filter
+      if (quoteSelectedMonth !== 'all') {
+        const d = new Date(q.created_at);
+        if (!isNaN(d.getTime())) {
+          const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          if (mKey !== quoteSelectedMonth) return false;
+        }
+      }
+
+      // Status filter
+      if (quoteStatusFilter !== 'all') {
+        if (norm !== quoteStatusFilter) return false;
+      }
+
+      // Search query
+      if (quoteSearchQuery.trim()) {
+        const query = quoteSearchQuery.toLowerCase();
+        const ref = (q.reference_number || '').toLowerCase();
+        const name = (q.customer_name || '').toLowerCase();
+        const biz = (q.business_name || '').toLowerCase();
+        const email = (q.customer_email || '').toLowerCase();
+        const phone = (q.customer_phone || '').toLowerCase();
+        const service = (q.service_type || '').toLowerCase();
+        const loc = (q.delivery_location || '').toLowerCase();
+        if (
+          !ref.includes(query) &&
+          !name.includes(query) &&
+          !biz.includes(query) &&
+          !email.includes(query) &&
+          !phone.includes(query) &&
+          !service.includes(query) &&
+          !loc.includes(query)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Date sorting: newest vs oldest
+    list.sort((a, b) => {
+      const timeA = new Date(a.created_at).getTime() || 0;
+      const timeB = new Date(b.created_at).getTime() || 0;
+      return quoteSortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
+
+    return list;
+  }, [quotes, quoteViewMode, quoteSelectedMonth, quoteStatusFilter, quoteSearchQuery, quoteSortOrder]);
 
   // Save Settings
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -519,7 +736,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     .reduce((sum, o) => sum + (o.total_estimated_amount || 0), 0);
 
   const pendingOrders = orders.filter((o) => o.status === 'pending');
-  const pendingQuotes = quotes.filter((q) => q.status === 'pending');
+  const pendingQuotes = quotes.filter((q) => normalizeQuoteStatus(q.status) === 'Pending Review');
   const unreadMessages = messages.filter((m) => !m.is_read);
 
   return (
@@ -1086,90 +1303,470 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           )}
 
           {/* ============================================================ */}
-          {/* TAB 3: QUOTES MANAGEMENT */}
+          {/* TAB 3: QUOTES MANAGEMENT & MONTHLY RECORDS */}
           {/* ============================================================ */}
           {activeAdminTab === 'quotes' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+            <div className="space-y-6">
+              {/* Header & KPI Summary */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 font-['Outfit']">
-                    Commercial Quote Proposals
+                  <h2 className="text-xl font-black text-slate-900 font-['Outfit'] flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-cyan-600" />
+                    <span>Commercial Quote Proposals & Monthly Records</span>
                   </h2>
-                  <p className="text-xs text-slate-500">
-                    Bulk supply inquiries and event logistics requests
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Chronological inquiry management, monthly demand volume tracking, and historical archival records
                   </p>
                 </div>
-                <span className="text-xs font-bold text-slate-500 bg-slate-200/70 px-2.5 py-1 rounded-full">
-                  {quotes.length} Quotes
-                </span>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-xs tabular-nums">
+                    {quotes.length} Total All-Time
+                  </span>
+                  <button
+                    onClick={loadAdminData}
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition-colors"
+                    title="Refresh Quotes"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isLoadingData ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
               </div>
 
-              {quotes.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-xs">
-                  No quote inquiries submitted yet.
+              {/* Monthly Quote Records & Volume Analytics Banner */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-cyan-600" />
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                      Monthly Records & Inquiry Volumes
+                    </h3>
+                  </div>
+                  <span className="text-[11px] text-slate-400">
+                    Updated dynamically from quote request dates
+                  </span>
+                </div>
+
+                {monthlyQuoteRecords.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-2">No monthly inquiry records recorded yet.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {monthlyQuoteRecords.map((m) => {
+                      const isSelected = quoteSelectedMonth === m.monthKey;
+                      return (
+                        <div
+                          key={m.monthKey}
+                          onClick={() => setQuoteSelectedMonth(isSelected ? 'all' : m.monthKey)}
+                          className={`p-3.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-cyan-50/70 border-cyan-400 shadow-xs ring-1 ring-cyan-400/50'
+                              : 'bg-slate-50/70 hover:bg-slate-100/70 border-slate-200'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-900 font-['Outfit']">
+                              {m.monthName}
+                            </span>
+                            <span className="text-[11px] font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-200 text-cyan-800 tabular-nums">
+                              {m.totalQuotes} {m.totalQuotes === 1 ? 'quote' : 'quotes'}
+                            </span>
+                          </div>
+
+                          <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
+                            <span>Active: <strong className="text-slate-800 tabular-nums">{m.activeCount}</strong></span>
+                            <span>Archived: <strong className="text-slate-600 tabular-nums">{m.archivedCount}</strong></span>
+                            <span>Accepted: <strong className="text-emerald-700 tabular-nums">{m.acceptedCount}</strong></span>
+                          </div>
+
+                          <div className="mt-2 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px] text-slate-400">
+                            <span>{isSelected ? '✓ Filter Active' : 'Click to filter'}</span>
+                            <span className="font-mono">{m.monthKey}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Controls Toolbar: View Mode Tabs, Month Filter, Status Filter, Search, and Date Sort Toggle */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  {/* Segmented View Mode Tabs: Active, Archived Records, All */}
+                  <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl text-xs font-medium">
+                    <button
+                      type="button"
+                      onClick={() => setQuoteViewMode('active')}
+                      className={`px-3 py-1.5 rounded-lg transition-colors font-bold flex items-center gap-1.5 ${
+                        quoteViewMode === 'active'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>Active Quotes</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 tabular-nums">
+                        {quotes.filter((q) => normalizeQuoteStatus(q.status) !== 'Archived').length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setQuoteViewMode('archived')}
+                      className={`px-3 py-1.5 rounded-lg transition-colors font-bold flex items-center gap-1.5 ${
+                        quoteViewMode === 'archived'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Archive className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Archived Records</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 tabular-nums">
+                        {quotes.filter((q) => normalizeQuoteStatus(q.status) === 'Archived').length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setQuoteViewMode('all')}
+                      className={`px-3 py-1.5 rounded-lg transition-colors font-bold flex items-center gap-1.5 ${
+                        quoteViewMode === 'all'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>All Inquiries</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 tabular-nums">
+                        {quotes.length}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Date Sort Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setQuoteSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors shadow-2xs"
+                    title="Toggle Date Order"
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5 text-cyan-600" />
+                    <span>
+                      Order: {quoteSortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Filter and Search Bar */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  {/* Month Filter Dropdown */}
+                  <div className="relative">
+                    <select
+                      value={quoteSelectedMonth}
+                      onChange={(e) => setQuoteSelectedMonth(e.target.value)}
+                      className="w-full text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-cyan-500 text-slate-700 font-medium"
+                    >
+                      <option value="all">Filter by Month: All Recorded Months ({quotes.length})</option>
+                      {monthlyQuoteRecords.map((m) => (
+                        <option key={m.monthKey} value={m.monthKey}>
+                          {m.monthName} ({m.totalQuotes} quotes)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Status Filter Dropdown */}
+                  <div className="relative">
+                    <select
+                      value={quoteStatusFilter}
+                      onChange={(e) => setQuoteStatusFilter(e.target.value)}
+                      className="w-full text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-cyan-500 text-slate-700 font-medium"
+                    >
+                      <option value="all">Filter by Status: All Statuses</option>
+                      {CANONICAL_QUOTE_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                      {quoteViewMode !== 'active' && (
+                        <option value="Archived">Archived</option>
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Search ref, customer, phone, location..."
+                      value={quoteSearchQuery}
+                      onChange={(e) => setQuoteSearchQuery(e.target.value)}
+                      className="w-full text-xs py-2 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-cyan-500 text-slate-700 font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Active Filter Chips / Clear */}
+                {(quoteSelectedMonth !== 'all' || quoteStatusFilter !== 'all' || quoteSearchQuery.trim()) && (
+                  <div className="flex items-center gap-2 pt-1 text-xs text-slate-500">
+                    <span>Active Filters:</span>
+                    {quoteSelectedMonth !== 'all' && (
+                      <span className="bg-cyan-50 text-cyan-800 border border-cyan-200 px-2 py-0.5 rounded text-[11px] font-medium">
+                        Month: {quoteSelectedMonth}
+                      </span>
+                    )}
+                    {quoteStatusFilter !== 'all' && (
+                      <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded text-[11px] font-medium">
+                        Status: {quoteStatusFilter}
+                      </span>
+                    )}
+                    {quoteSearchQuery.trim() && (
+                      <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded text-[11px] font-medium">
+                        Search: "{quoteSearchQuery}"
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuoteSelectedMonth('all');
+                        setQuoteStatusFilter('all');
+                        setQuoteSearchQuery('');
+                      }}
+                      className="text-cyan-700 hover:underline font-semibold ml-auto text-[11px]"
+                    >
+                      Clear All Filters
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Quotes List */}
+              {displayedQuotes.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 text-xs space-y-2">
+                  <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="font-semibold text-slate-700 text-sm">No quote requests found</p>
+                  <p className="text-slate-400">
+                    {quotes.length === 0
+                      ? 'No quote inquiries have been submitted yet.'
+                      : 'No quotes match the selected view mode, month filter, or search term.'}
+                  </p>
+                  {(quoteSelectedMonth !== 'all' || quoteStatusFilter !== 'all' || quoteSearchQuery.trim()) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuoteSelectedMonth('all');
+                        setQuoteStatusFilter('all');
+                        setQuoteSearchQuery('');
+                      }}
+                      className="mt-2 inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold"
+                    >
+                      Reset Filters
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {quotes.map((quote) => (
-                    <div
-                      key={quote.id}
-                      className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                        <div>
-                          <span className="text-sm font-black font-mono text-cyan-700">
-                            #{quote.reference_number}
-                          </span>
-                          <span className="ml-2 font-bold text-slate-800 text-xs">
-                            {quote.customer_name}
-                          </span>
-                          {quote.business_name && (
-                            <span className="text-xs text-slate-500 font-medium">
-                              {' '}• {quote.business_name}
+                  {displayedQuotes.map((quote) => {
+                    const normStatus = normalizeQuoteStatus(quote.status);
+                    const isArchived = normStatus === 'Archived';
+                    const isProcessing = isProcessingQuoteId === quote.id;
+
+                    // Color scheme for status
+                    const statusColorMap: Record<QuoteStatus, string> = {
+                      'Pending Review': 'bg-amber-50 text-amber-800 border-amber-300',
+                      'In Review': 'bg-sky-50 text-sky-800 border-sky-300',
+                      'Quoted': 'bg-indigo-50 text-indigo-800 border-indigo-300',
+                      'Accepted': 'bg-emerald-50 text-emerald-800 border-emerald-300',
+                      'Rejected': 'bg-rose-50 text-rose-800 border-rose-300',
+                      'Archived': 'bg-slate-100 text-slate-600 border-slate-300',
+                      'New': 'bg-amber-50 text-amber-800 border-amber-300',
+                      'Contacted': 'bg-sky-50 text-sky-800 border-sky-300',
+                      'pending': 'bg-amber-50 text-amber-800 border-amber-300',
+                      'reviewed': 'bg-sky-50 text-sky-800 border-sky-300',
+                      'proposal_sent': 'bg-indigo-50 text-indigo-800 border-indigo-300',
+                      'accepted': 'bg-emerald-50 text-emerald-800 border-emerald-300',
+                      'rejected': 'bg-rose-50 text-rose-800 border-rose-300'
+                    };
+
+                    return (
+                      <div
+                        key={quote.id}
+                        className={`bg-white rounded-2xl border p-5 shadow-xs space-y-3 transition-colors ${
+                          isArchived ? 'border-slate-200 bg-slate-50/50' : 'border-slate-200'
+                        }`}
+                      >
+                        {/* Quote Header Bar: Reference, Name, Request Date, Status & Delete/Archive Action */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-black font-mono text-cyan-700">
+                                #{quote.reference_number || quote.id}
+                              </span>
+                              <span className="font-bold text-slate-900 text-xs">
+                                {quote.customer_name}
+                              </span>
+                              {quote.business_name && (
+                                <span className="text-xs text-slate-500 font-medium">
+                                  • {quote.business_name}
+                                </span>
+                              )}
+                              {isArchived && (
+                                <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-700 px-2 py-0.5 rounded">
+                                  Archived in Records
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Request Date with Tabular Numerals */}
+                            <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              <span className="font-mono tabular-nums">
+                                Requested: {formatQuoteDate(quote.created_at)}
+                              </span>
+                              {quote.updated_at && quote.updated_at !== quote.created_at && (
+                                <span className="text-[10px] text-slate-400">
+                                  (Updated: {formatQuoteDate(quote.updated_at)})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Status Dropdown and Action Controls */}
+                          <div className="flex items-center gap-2">
+                            {/* Live Status Selector */}
+                            {!isArchived ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase hidden sm:inline">
+                                  Status:
+                                </span>
+                                <select
+                                  value={normStatus}
+                                  disabled={isProcessing}
+                                  onChange={(e) => handleUpdateQuoteStatus(quote.id, e.target.value as QuoteStatus)}
+                                  className={`p-1.5 text-xs font-bold rounded-lg border focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer transition-colors ${
+                                    statusColorMap[normStatus] || 'bg-slate-50 text-slate-700 border-slate-300'
+                                  }`}
+                                >
+                                  {CANONICAL_QUOTE_STATUSES.map((status) => (
+                                    <option key={status} value={status}>
+                                      {status}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            ) : (
+                              <span className="text-xs font-bold bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-300">
+                                Archived Record
+                              </span>
+                            )}
+
+                            {/* Delete / Archive Button (for Active quotes) */}
+                            {!isArchived ? (
+                              confirmArchiveQuoteId === quote.id ? (
+                                <div className="flex items-center gap-1 bg-rose-50 p-1 rounded-lg border border-rose-200">
+                                  <span className="text-[11px] font-bold text-rose-800 px-1">
+                                    Archive?
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={isProcessing}
+                                    onClick={() => handleArchiveQuote(quote.id)}
+                                    className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[11px] font-bold"
+                                  >
+                                    Confirm
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmArchiveQuoteId(null)}
+                                    className="px-1.5 py-0.5 text-slate-500 hover:text-slate-800 text-[11px]"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmArchiveQuoteId(quote.id)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-lg text-xs font-semibold transition-colors"
+                                  title="Archive quote to records"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Delete</span>
+                                </button>
+                              )
+                            ) : (
+                              /* Restore Button (for Archived quotes) */
+                              <button
+                                type="button"
+                                disabled={isProcessing}
+                                onClick={() => handleRestoreQuote(quote.id)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 rounded-lg text-xs font-bold transition-colors"
+                                title="Restore quote to active queue"
+                              >
+                                <RotateCcw className={`w-3.5 h-3.5 ${isProcessing ? 'animate-spin' : ''}`} />
+                                <span>Restore to Active</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Quote Details Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-600">
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                              Program Requested
                             </span>
-                          )}
+                            <p className="font-bold text-slate-900">{quote.service_type || 'Ice Supply Inquiry'}</p>
+                            <p className="text-slate-500 capitalize">
+                              Frequency: {(quote.delivery_frequency || 'one_time').replace('_', ' ')}
+                            </p>
+                            {quote.event_date && (
+                              <p className="text-slate-500 text-[11px]">
+                                Event Date: {quote.event_date}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                              Volume & Delivery Location
+                            </span>
+                            <p className="font-semibold text-slate-800">
+                              {quote.estimated_volume || 'Unspecified Volume'}
+                            </p>
+                            <p className="text-slate-500 flex items-start gap-1 mt-0.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                              <span>{quote.delivery_location || 'Coordinates Pending'}</span>
+                            </p>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                              Client Contact
+                            </span>
+                            <p className="font-semibold text-slate-800 flex items-center gap-1">
+                              <Phone className="w-3 h-3 text-slate-400" />
+                              <a href={`tel:${quote.customer_phone}`} className="hover:text-cyan-700">
+                                {quote.customer_phone}
+                              </a>
+                            </p>
+                            <p className="text-slate-500 flex items-center gap-1 mt-0.5">
+                              <Mail className="w-3 h-3 text-slate-400" />
+                              <a href={`mailto:${quote.customer_email}`} className="hover:text-cyan-700 truncate">
+                                {quote.customer_email}
+                              </a>
+                            </p>
+                          </div>
                         </div>
 
-                        <select
-                          value={quote.status}
-                          onChange={(e) => handleUpdateQuoteStatus(quote.id, e.target.value)}
-                          className="p-1.5 text-xs font-bold rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-slate-50"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="reviewed">Reviewed</option>
-                          <option value="proposal_sent">Proposal Sent</option>
-                          <option value="accepted">Accepted</option>
-                          <option value="rejected">Rejected</option>
-                        </select>
+                        {/* Client Notes & Internal Notes */}
+                        {quote.notes && (
+                          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
+                            <strong className="text-slate-700">Client Inscription:</strong> {quote.notes}
+                          </div>
+                        )}
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-600">
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Program Requested</span>
-                          <p className="font-bold text-slate-900">{quote.service_type}</p>
-                          <p className="text-slate-500 capitalize">Freq: {quote.delivery_frequency.replace('_', ' ')}</p>
-                        </div>
-
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Volume & Location</span>
-                          <p className="font-semibold text-slate-800">{quote.estimated_volume}</p>
-                          <p className="text-slate-500">{quote.delivery_location}</p>
-                        </div>
-
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-slate-400 block">Contact Coordinates</span>
-                          <p className="font-semibold text-slate-800">{quote.customer_phone}</p>
-                          <p className="text-slate-500">{quote.customer_email}</p>
-                        </div>
-                      </div>
-
-                      {quote.notes && (
-                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
-                          <strong>Client Notes:</strong> {quote.notes}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
